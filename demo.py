@@ -1,8 +1,7 @@
 import os
 
 import openai
-
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 # .envファイルを読み込む
 # load_dotenv()
