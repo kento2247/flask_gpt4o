@@ -4,7 +4,7 @@ import openai
 from dotenv import load_dotenv
 
 # .envファイルを読み込む
-# load_dotenv()
+load_dotenv()
 
 # 環境変数からAPIキーを取得
 api_key = os.getenv("OPENAI_API_KEY")
