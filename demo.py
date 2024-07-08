@@ -1,28 +1,45 @@
+import argparse
 import os
 
 import openai
 from dotenv import load_dotenv
 
-# .envファイルを読み込む
-load_dotenv()
 
-# 環境変数からAPIキーを取得
-api_key = os.getenv("OPENAI_API_KEY")
-
-# OpenAI APIキーを設定
-openai.api_key = api_key
-
-prompt = input("user: ")
-
-response = openai.chat.completions.create(
-    model="gpt-4o",
-    messages=[
+def main():
+    # 環境変数からAPIキーを取得
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    messages = [
         {
             "role": "system",
-            "content": "you are a helpful assistant.",
-        },
-        {"role": "user", "content": prompt},
-    ],
-)
-print("assistant: ", response.choices[0].message.content)
-print("assistant: ", response.choices[0].message.content)
+            "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
+        }
+    ]
+    response = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+    )
+    print("assistant: ", response.choices[0].message.content)
+
+    while True:
+        prompt = input("user: ")
+        if prompt == "exit":
+            break
+        messages.append({"role": "user", "content": prompt})
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+        )
+        print("assistant: ", response.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--load_env",
+        action="store_true",
+        help="Load environment variables from .env file",
+    )
+    args = parser.parse_args()
+    if args.load_env:
+        load_dotenv()
+    main()
