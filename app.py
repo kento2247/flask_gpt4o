@@ -38,6 +38,9 @@ def callback():
                 )
             else:
                 user_message = event["message"]["text"]
+                if user_message == "exit" or user_message == "clear":
+                    messages.clear()
+                    return "OK"
                 messages.append({"role": "user", "content": user_message})
 
     response = openai.chat.completions.create(
@@ -46,6 +49,7 @@ def callback():
     )
     response = response.choices[0].message.content
     reply_message(reply_token, response)
+    messages.append({"role": "assistant", "content": response})
     return "OK"
 
 
