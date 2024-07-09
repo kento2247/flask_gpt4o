@@ -77,4 +77,4 @@ if __name__ == "__main__":
         load_dotenv()
     openai.api_key = os.getenv("OPENAI_API_KEY")
     # port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=3011)
