@@ -16,9 +16,9 @@ headers = {
 messages_dict = {}
 
 
-@app.route("/")
-def hello():
-    return "Hello, World!"
+@app.route("/messages")
+def messages():
+    return messages_dict
 
 
 @app.route("/callback", methods=["POST"])
