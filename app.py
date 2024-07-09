@@ -16,6 +16,17 @@ headers = {
 messages_dict = {}
 
 
+def initialize_messages(id):
+    if id not in messages_dict:
+        messages_dict[id] = []
+    messages_dict[id] = [
+        {
+            "role": "system",
+            "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
+        }
+    ]
+
+
 @app.route("/messages")
 def messages():
     return messages_dict
@@ -32,28 +43,24 @@ def callback():
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
             if user_id not in messages_dict:
-                messages_dict[user_id] = []
-            if len(messages_dict[user_id]) == 0:
-                messages_dict[user_id].append(
-                    {
-                        "role": "system",
-                        "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
-                    }
-                )
+                initialize_messages(user_id)
+            if len(messages_dict[user_id]) == 1:
                 response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
-                    messages_dict[user_id].clear()
+                    initialize_messages(user_id)
                     reply_message(reply_token, "会話履歴をリセットしました．")
                     return "OK"
-                messages_dict[user_id].append({"role": "user", "content": user_message})
+                else:
+                    messages_dict[user_id].append(
+                        {"role": "user", "content": user_message}
+                    )
         # 友達追加やブロック解除のイベント
         elif event["type"] == "follow":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
-            if user_id not in messages_dict:
-                messages_dict[user_id] = []
+            initialize_messages(user_id)
             response_text += f"[session_id: {user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
         else:
             return "OK"
