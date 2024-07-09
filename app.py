@@ -26,9 +26,11 @@ def callback():
     # リクエストボディを取得
     body = request.json
     events = body.get("events", [])
+    response_text = ""
     for event in events:
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
+            user_id = event["source"]["userId"]
             if len(messages) == 0:
                 messages.append(
                     {
@@ -36,10 +38,12 @@ def callback():
                         "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
                     }
                 )
+                response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
                     messages.clear()
+                    reply_message(reply_token, "会話履歴をリセットしました．")
                     return "OK"
                 messages.append({"role": "user", "content": user_message})
 
@@ -47,8 +51,10 @@ def callback():
         model="gpt-4o",
         messages=messages,
     )
-    response = response.choices[0].message.content
-    reply_message(reply_token, response)
+    response_text += response.choices[
+        0
+    ].message.content  # chatgptの返答テキストのみを抽出
+    reply_message(reply_token, response)  # lineでの返信
     messages.append({"role": "assistant", "content": response})
     return "OK"
 
