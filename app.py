@@ -66,8 +66,8 @@ def callback():
     response_text += response.choices[
         0
     ].message.content  # chatgptの返答テキストのみを抽出
-    reply_message(reply_token, response)  # lineでの返信
-    messages_dict[user_id].append({"role": "assistant", "content": response})
+    reply_message(reply_token, response_text)  # lineでの返信
+    messages_dict[user_id].append({"role": "assistant", "content": response_text})
     return "OK"
 
 
