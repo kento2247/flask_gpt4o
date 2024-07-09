@@ -13,7 +13,7 @@ headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
 }
-messages = []
+messages_dict = {}
 
 
 @app.route("/")
@@ -27,10 +27,12 @@ def callback():
     body = request.json
     events = body.get("events", [])
     response_text = ""
+    messages = []
     for event in events:
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
+            messages = messages_dict.get(user_id, [])
             if len(messages) == 0:
                 messages.append(
                     {
@@ -46,6 +48,14 @@ def callback():
                     reply_message(reply_token, "会話履歴をリセットしました．")
                     return "OK"
                 messages.append({"role": "user", "content": user_message})
+        # 友達追加やブロック解除のイベント
+        elif event["type"] == "follow":
+            reply_token = event["replyToken"]
+            user_id = event["source"]["userId"]
+            messages = messages_dict.get(user_id, [])
+            response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
+        else:
+            return "OK"
 
     response = openai.chat.completions.create(
         model="gpt-4o",
