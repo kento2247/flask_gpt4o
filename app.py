@@ -31,7 +31,7 @@ def callback():
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
-            if messages_dict[user_id] == None:
+            if user_id not in messages_dict:
                 messages_dict[user_id] = []
             if len(messages_dict[user_id]) == 0:
                 messages_dict[user_id].append(
