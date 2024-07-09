@@ -54,7 +54,7 @@ def callback():
             user_id = event["source"]["userId"]
             if user_id not in messages_dict:
                 messages_dict[user_id] = []
-            response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
+            response_text += f"[session_id: {user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
         else:
             return "OK"
 
