@@ -50,7 +50,10 @@ def callback():
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
                     initialize_messages(user_id)
-                    reply_message(reply_token, "会話履歴をリセットしました．")
+                    reply_message(
+                        reply_token,
+                        "会話履歴をリセットしました．\n何かしらのメッセージを送信すると，再度会話を開始できます．",
+                    )
                     return "OK"
                 else:
                     messages_dict[user_id].append(
