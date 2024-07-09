@@ -32,9 +32,10 @@ def callback():
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
-            messages = messages_dict.get(user_id, [])
+            if messages_dict[user_id] == None:
+                messages_dict[user_id] = []
             if len(messages) == 0:
-                messages.append(
+                messages_dict[user_id].append(
                     {
                         "role": "system",
                         "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
@@ -44,28 +45,29 @@ def callback():
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
-                    messages.clear()
+                    messages_dict[user_id].clear()
                     reply_message(reply_token, "会話履歴をリセットしました．")
                     return "OK"
-                messages.append({"role": "user", "content": user_message})
+                messages_dict[user_id].append({"role": "user", "content": user_message})
         # 友達追加やブロック解除のイベント
         elif event["type"] == "follow":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
-            messages = messages_dict.get(user_id, [])
+            if user_id not in messages_dict:
+                messages_dict[user_id] = []
             response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
         else:
             return "OK"
 
     response = openai.chat.completions.create(
         model="gpt-4o",
-        messages=messages,
+        messages=messages_dict[user_id],
     )
     response_text += response.choices[
         0
     ].message.content  # chatgptの返答テキストのみを抽出
     reply_message(reply_token, response)  # lineでの返信
-    messages.append({"role": "assistant", "content": response})
+    messages_dict[user_id].append({"role": "assistant", "content": response})
     return "OK"
 
 
