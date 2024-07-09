@@ -27,14 +27,13 @@ def callback():
     body = request.json
     events = body.get("events", [])
     response_text = ""
-    messages = []
     for event in events:
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
             user_id = event["source"]["userId"]
             if messages_dict[user_id] == None:
                 messages_dict[user_id] = []
-            if len(messages) == 0:
+            if len(messages_dict[user_id]) == 0:
                 messages_dict[user_id].append(
                     {
                         "role": "system",
