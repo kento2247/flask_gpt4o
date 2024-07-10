@@ -90,7 +90,7 @@ def callback():
             line_id = event["source"]["userId"]
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
             if len(messages) == 1:
-                session_id = mongo_db_client.sessionid_dict["line_id"]
+                session_id = mongo_db_client.sessionid_dict[line_id]
                 response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセット\n\n"
             else:
                 user_message = event["message"]["text"]
@@ -111,7 +111,7 @@ def callback():
             line_id = event["source"]["userId"]
             mongo_db_client.initialize_messages(line_id)
             messages = INITIAL_MESSAGE
-            session_id = mongo_db_client.sessionid_dict["line_id"]
+            session_id = mongo_db_client.sessionid_dict[line_id]
             response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセット\n\n"
         else:
             return "OK"
