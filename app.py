@@ -121,12 +121,13 @@ def callback():
             messages=messages,
         )
         response_text += response.choices[0].message.content
+        reply_message(reply_token, response_text)  # lineでの返信
+        content_dict = {"role": "assistant", "content": response_text}
+        mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
     except Exception as e:
         response_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
-    reply_message(reply_token, response_text)  # lineでの返信
-    content_dict = {"role": "assistant", "content": response_text}
-    mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
+        reply_message(reply_token, response_text)
     return "OK"
 
 
