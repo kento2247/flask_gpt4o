@@ -116,7 +116,7 @@ def callback():
         else:
             return "OK"
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4o",
             messages=messages,
         )
