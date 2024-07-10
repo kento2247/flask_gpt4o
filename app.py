@@ -95,11 +95,11 @@ def callback():
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
-                    mongo_db.initialize_messages(line_id)
                     reply_message(
                         reply_token,
                         "会話履歴をリセットしました．\n何かしらのメッセージの送信で会話を再開．",
                     )
+                    mongo_db.initialize_messages(line_id)
                     return "OK"
                 else:
                     content_dict = {"role": "user", "content": user_message}
@@ -124,6 +124,7 @@ def callback():
     except Exception as e:
         response_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
+        return "OK"
     reply_message(reply_token, response_text)  # lineでの返信
     content_dict = {"role": "assistant", "content": response_text}
     mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
