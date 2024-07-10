@@ -26,10 +26,16 @@ class mongo_db:
         self.client = MongoClient(self.MONGO_URI)
         self.db = self.client["gpt4otest"]["messages"]
 
-        # endが存在しないcollectionを取得
-        self.sessionid_dict = self.db.find_one({"end": {"$exists": False}})
-        if self.sessionid_dict is None:
+        # endが存在しないcollectionの一覧を取得
+        session_count = self.db.count_documents({"end": {"$exists": False}})
+        if session_count == 0:
             self.sessionid_dict = {}
+        else:
+            sessions = self.db.find({"start": {"$exists": True}})
+            for session in sessions:
+                line_id = session["line_id"]
+                session_id = session["session_id"]
+                self.sessionid_dict[line_id] = session_id
 
     def initialize_messages(self, line_id: str) -> None:
         if line_id in self.sessionid_dict:
