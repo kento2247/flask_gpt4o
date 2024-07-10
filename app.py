@@ -38,12 +38,12 @@ class mongo_db:
 
     def initialize_messages(self, line_id: str) -> None:
         if line_id in self.sessionid_dict:
-            session_id = self.sessionid_dict["line_id"]
-            old_messages = self.db.find_one(
-                {"session_id": session_id, "user_id": line_id}
-            )
+            session_id = self.sessionid_dict[line_id]
             # 終了記号を追加
-            old_messages["end"] = True
+            self.db.update_many(
+                {"session_id": session_id, "line_id": line_id},
+                {"$set": {"end": True}},
+            )
 
         # 新しいセッションを作成
         new_session_id = str(uuid.uuid4())
