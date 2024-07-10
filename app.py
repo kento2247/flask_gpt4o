@@ -25,13 +25,12 @@ class mongo_db:
         self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@gpt4otest.aartxch.mongodb.net/?retryWrites=true&w=majority&appName=gpt4otest"
         self.client = MongoClient(self.MONGO_URI)
         self.db = self.client["gpt4otest"]["messages"]
+        self.sessionid_dict = {}
 
         # endが存在しないcollectionの一覧を取得
         session_count = self.db.count_documents({"end": {"$exists": False}})
-        if session_count == 0:
-            self.sessionid_dict = {}
-        else:
-            sessions = self.db.find({"start": {"$exists": True}})
+        if session_count > 0:
+            sessions = self.db.find({"end": {"$exists": False}})
             for session in sessions:
                 line_id = session["line_id"]
                 session_id = session["session_id"]
