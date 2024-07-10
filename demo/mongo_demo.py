@@ -17,7 +17,7 @@ def main():
     # Create a new database
     db = client["gpt4otest"]
     # Create a new collection
-    collection = db["test"]
+    collection = db["messages"]
 
     data = {
         "userid": "demo",

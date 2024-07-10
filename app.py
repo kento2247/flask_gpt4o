@@ -25,8 +25,11 @@ class mongo_db:
         self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@gpt4otest.aartxch.mongodb.net/?retryWrites=true&w=majority&appName=gpt4otest"
         self.client = MongoClient(self.MONGO_URI)
         self.db = self.client["gpt4otest"]["messages"]
-        # endがTrueでないcollectionを取得
-        self.sessionid_dict = self.db.find({"end": {"$ne": True}})
+
+        # endが存在しないcollectionを取得
+        self.sessionid_dict = self.db.find_one({"end": {"$exists": False}})
+        if self.sessionid_dict is None:
+            self.sessionid_dict = {}
 
     def initialize_messages(self, line_id: str) -> None:
         if line_id in self.sessionid_dict:
@@ -119,6 +122,17 @@ def callback():
     content_dict = {"role": "assistant", "content": response_text}
     mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
     return "OK"
+
+
+# @app.route("/test", methods=["GET"])
+# def test():
+#     print(mongo_db_client.sessionid_dict)
+#     mongo_db_client.initialize_messages("test")
+#     print(mongo_db_client.sessionid_dict)
+#     print(mongo_db_client.get_messages("test"))
+#     mongo_db_client.insert_message("test", {"role": "user", "content": "test"})
+#     print(mongo_db_client.get_messages("test"))
+#     return "OK"
 
 
 def reply_message(reply_token, user_message):
