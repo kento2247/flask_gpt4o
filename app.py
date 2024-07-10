@@ -1,35 +1,72 @@
 import argparse
 import os
+import uuid
 
 import openai
 import requests
 from dotenv import load_dotenv
 from flask import Flask, request
+from pymongo.mongo_client import MongoClient
 
 app = Flask(__name__)
 
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-}
-messages_dict = {}
+INITIAL_MESSAGE = [
+    {
+        "role": "system",
+        "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
+    }
+]
 
 
-def initialize_messages(id):
-    if id not in messages_dict:
-        messages_dict[id] = []
-    messages_dict[id] = [
-        {
-            "role": "system",
-            "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
+class mongo_db:
+    def __init__(self):
+        self.MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+        self.MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
+        self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@gpt4otest.aartxch.mongodb.net/?retryWrites=true&w=majority&appName=gpt4otest"
+        self.client = MongoClient(self.MONGO_URI)
+        self.db = self.client["gpt4otest"]["messages"]
+        # endがTrueでないcollectionを取得
+        self.sessionid_dict = self.db.find({"end": {"$ne": True}})
+
+    def initialize_messages(self, line_id: str) -> None:
+        if line_id in self.sessionid_dict:
+            session_id = self.sessionid_dict["line_id"]
+            old_messages = self.db.find_one(
+                {"session_id": session_id, "user_id": line_id}
+            )
+            # 終了記号を追加
+            old_messages["end"] = True
+
+        # 新しいセッションを作成
+        new_session_id = str(uuid.uuid4())
+        new_messages = {
+            "session_id": new_session_id,
+            "line_id": line_id,
+            "data": INITIAL_MESSAGE,
         }
-    ]
+        self.db.insert_one(new_messages)
+        self.sessionid_dict["line_id"] = new_session_id
+
+    def get_messages(self, line_id: str) -> list:
+        if line_id not in self.sessionid_dict:
+            self.initialize_messages(line_id)
+        session_id = self.sessionid_dict["line_id"]
+        messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
+        return messages["data"]
+
+    def insert_message(self, line_id: str, content_dict: dict) -> None:
+        if line_id not in self.sessionid_dict:
+            self.initialize_messages(line_id)
+        session_id = self.sessionid_dict["line_id"]
+        messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
+        messages["data"].append(content_dict)
+        self.db.update_one(
+            {"session_id": session_id, "line_id": line_id},
+            {"$set": {"data": messages["data"]}},
+        )
 
 
-@app.route("/messages")
-def messages():
-    return messages_dict
+mongo_db_client = mongo_db()
 
 
 @app.route("/callback", methods=["POST"])
@@ -38,49 +75,58 @@ def callback():
     body = request.json
     events = body.get("events", [])
     response_text = ""
+    messages = []
     for event in events:
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
-            user_id = event["source"]["userId"]
-            if user_id not in messages_dict:
-                initialize_messages(user_id)
-            if len(messages_dict[user_id]) == 1:
-                response_text += f"[初めまして{user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
+            line_id = event["source"]["userId"]
+            messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
+            if len(messages) == 1:
+                session_id = mongo_db_client.sessionid_dict["line_id"]
+                response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセット\n\n"
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
-                    initialize_messages(user_id)
+                    mongo_db.initialize_messages(line_id)
                     reply_message(
                         reply_token,
-                        "会話履歴をリセットしました．\n何かしらのメッセージを送信すると，再度会話を開始できます．",
+                        "会話履歴をリセットしました．\n何かしらのメッセージの送信で会話を再開．",
                     )
                     return "OK"
                 else:
-                    messages_dict[user_id].append(
-                        {"role": "user", "content": user_message}
-                    )
+                    content_dict = {"role": "user", "content": user_message}
+                    mongo_db_client.insert_message(line_id, content_dict)
+                    messages.append(content_dict)
         # 友達追加やブロック解除のイベント
         elif event["type"] == "follow":
             reply_token = event["replyToken"]
-            user_id = event["source"]["userId"]
-            initialize_messages(user_id)
-            response_text += f"[session_id: {user_id}]\n[exit を送信すると会話履歴をリセットできます]\n"
+            line_id = event["source"]["userId"]
+            mongo_db_client.initialize_messages(line_id)
+            messages = INITIAL_MESSAGE
+            session_id = mongo_db_client.sessionid_dict["line_id"]
+            response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセット\n\n"
         else:
             return "OK"
 
     response = openai.chat.completions.create(
         model="gpt-4o",
-        messages=messages_dict[user_id],
+        messages=messages,
     )
     response_text += response.choices[
         0
     ].message.content  # chatgptの返答テキストのみを抽出
     reply_message(reply_token, response_text)  # lineでの返信
-    messages_dict[user_id].append({"role": "assistant", "content": response_text})
+    content_dict = {"role": "assistant", "content": response_text}
+    mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
     return "OK"
 
 
 def reply_message(reply_token, user_message):
+    LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+    }
     reply = {
         "replyToken": reply_token,
         "messages": [{"type": "text", "text": user_message}],

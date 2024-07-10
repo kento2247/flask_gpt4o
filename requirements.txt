@@ -4,6 +4,7 @@ certifi==2024.7.4
 chardet==4.0.0
 click==8.1.7
 distro==1.9.0
+dnspython==1.16.0
 et-xmlfile==1.1.0
 exceptiongroup==1.2.1
 Flask==2.0.1
@@ -21,6 +22,7 @@ pandas==2.2.2
 pandas-stubs==2.2.2.240603
 pydantic==2.8.2
 pydantic_core==2.20.1
+pymongo==4.8.0
 python-dateutil==2.9.0.post0
 python-dotenv==0.17.1
 pytz==2024.1
