@@ -105,13 +105,13 @@ def callback():
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
             if len(messages) == 1:
                 session_id = mongo_db_client.sessionid_dict[line_id]
-                response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセット\n\n"
+                response_text += f"line_id: {line_id}\nsession_id: {session_id}\nexitを送信で会話履歴をリセットできます\n\n"
             else:
                 user_message = event["message"]["text"]
                 if user_message == "exit" or user_message == "clear":
                     reply_message(
                         reply_token,
-                        "会話履歴をリセットしました．\n何かしらのメッセージの送信で会話を再開．",
+                        "会話履歴をリセットしました\n何かしらのメッセージの送信で会話を再開します",
                     )
                     mongo_db.initialize_messages(line_id)
                     return "OK"
