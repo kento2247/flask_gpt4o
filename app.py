@@ -9,6 +9,7 @@ from flask import Flask, request
 from pymongo.mongo_client import MongoClient
 
 app = Flask(__name__)
+args = None
 
 INITIAL_MESSAGE = [
     {
@@ -20,7 +21,7 @@ INITIAL_MESSAGE = [
 
 def get_gpt_response(messages: list) -> str:
     if args.sleep_api:
-        response_str = "現在休止中"
+        response_str = "休止中です"
     else:
         openai.api_key = os.getenv("OPENAI_API_KEY")
         response = openai.completions.create(
@@ -158,12 +159,16 @@ def reply_message(reply_token, user_message):
 
 
 if __name__ == "__main__":
-    global args
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
         action="store_true",
         help="Load environment variables from .env file",
+    )
+    parser.add_argument(
+        "--sleep_api",
+        action="store_true",
+        help="Sleep OpenAI API",
     )
     args = parser.parse_args()
     if args.load_env:
