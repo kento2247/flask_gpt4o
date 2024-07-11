@@ -18,6 +18,16 @@ INITIAL_MESSAGE = [
 ]
 
 
+def get_gpt_response(messages: list) -> str:
+    # response = openai.ChatCompletion.create(
+    #     model="gpt-4o",
+    #     messages=messages,
+    # )
+    # response_str = response.choices[0].message.content
+    response_str = "現在休止中"
+    return response_str
+
+
 class mongo_db:
     def __init__(self):
         self.MONGO_USERNAME = os.getenv("MONGO_USERNAME")
@@ -116,11 +126,7 @@ def callback():
         else:
             return "OK"
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-        )
-        response_text += response.choices[0].message.content
+        response_text += get_gpt_response(messages)
         reply_message(reply_token, response_text)  # lineでの返信
         content_dict = {"role": "assistant", "content": response_text}
         mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
@@ -129,17 +135,6 @@ def callback():
         app.logger.error(e)
         reply_message(reply_token, response_text)
     return "OK"
-
-
-# @app.route("/test", methods=["GET"])
-# def test():
-#     print(mongo_db_client.sessionid_dict)
-#     mongo_db_client.initialize_messages("test")
-#     print(mongo_db_client.sessionid_dict)
-#     print(mongo_db_client.get_messages("test"))
-#     mongo_db_client.insert_message("test", {"role": "user", "content": "test"})
-#     print(mongo_db_client.get_messages("test"))
-#     return "OK"
 
 
 def reply_message(reply_token, user_message):
