@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 def main():
     # 環境変数からAPIキーを取得
     openai.api_key = os.getenv("OPENAI_API_KEY")
+    print("API key:", openai.api_key)
     messages = [
         # {
         #     "role": "system",
@@ -49,4 +50,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.load_env:
         load_dotenv()
+        print("Loaded environment variables from .env file")
     main()

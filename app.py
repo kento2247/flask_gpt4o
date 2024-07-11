@@ -20,7 +20,7 @@ INITIAL_MESSAGE = [
 
 def get_gpt_response(messages: list) -> str:
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    response = openai.ChatCompletion.create(
+    response = openai.completions.create(
         model="gpt-4o",
         messages=messages,
     )
