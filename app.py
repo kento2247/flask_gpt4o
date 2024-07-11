@@ -19,13 +19,15 @@ INITIAL_MESSAGE = [
 
 
 def get_gpt_response(messages: list) -> str:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    response = openai.completions.create(
-        model="gpt-4o",
-        messages=messages,
-    )
-    response_str = response.choices[0].message.content
-    # response_str = "現在休止中"
+    if args.sleep_api:
+        response_str = "現在休止中"
+    else:
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        response = openai.completions.create(
+            model="gpt-4o",
+            messages=messages,
+        )
+        response_str = response.choices[0].message.content
     return response_str
 
 
@@ -156,6 +158,7 @@ def reply_message(reply_token, user_message):
 
 
 if __name__ == "__main__":
+    global args
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
