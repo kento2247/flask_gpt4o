@@ -24,7 +24,7 @@ def get_gpt_response(messages: list) -> str:
         response_str = "休止中です"
     else:
         openai.api_key = os.getenv("OPENAI_API_KEY")
-        response = openai.completions.create(
+        response = openai.chat.completions.create(
             model="gpt-4o",
             messages=messages,
         )
