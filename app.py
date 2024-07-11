@@ -19,6 +19,7 @@ INITIAL_MESSAGE = [
 
 
 def get_gpt_response(messages: list) -> str:
+    openai.api_key = os.getenv("OPENAI_API_KEY")
     response = openai.ChatCompletion.create(
         model="gpt-4o",
         messages=messages,
@@ -164,6 +165,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.load_env:
         load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
     # port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=3011)
