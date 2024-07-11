@@ -19,12 +19,12 @@ INITIAL_MESSAGE = [
 
 
 def get_gpt_response(messages: list) -> str:
-    # response = openai.ChatCompletion.create(
-    #     model="gpt-4o",
-    #     messages=messages,
-    # )
-    # response_str = response.choices[0].message.content
-    response_str = "現在休止中"
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=messages,
+    )
+    response_str = response.choices[0].message.content
+    # response_str = "現在休止中"
     return response_str
 
 
