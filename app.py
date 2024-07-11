@@ -113,7 +113,7 @@ def callback():
                         reply_token,
                         "会話履歴をリセットしました\n何かしらのメッセージの送信で会話を再開します",
                     )
-                    mongo_db.initialize_messages(line_id)
+                    mongo_db_client.initialize_messages(line_id)
                     return "OK"
                 else:
                     content_dict = {"role": "user", "content": user_message}
