@@ -45,10 +45,9 @@ def callback():
     events = body.get("events", [])
 
     for event in events:
-        reply_token = event["replyToken"]
-        line_id = event["source"]["userId"]
-        session_id = ""
         if event["type"] == "message" and event["message"]["type"] == "text":
+            reply_token = event["replyToken"]
+            line_id = event["source"]["userId"]
             session_id = mongo_db_client.sessionid_dict[line_id]
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
             if len(messages) == 1:  # 初回メッセージ，またはリセット後のメッセージ
@@ -69,6 +68,8 @@ def callback():
 
         # 友達追加やブロック解除のイベント
         elif event["type"] == "follow":
+            reply_token = event["replyToken"]
+            line_id = event["source"]["userId"]
             messages = [
                 {
                     "role": "system",
