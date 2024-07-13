@@ -80,6 +80,11 @@ def callback():
     return "OK"
 
 
+@app.route("/keep_alive", methods=["GET"])
+def keep_alive():
+    return "OK"
+
+
 if __name__ == "__main__":
     config = yaml.safe_load(open("config.yaml"))
 
@@ -116,6 +121,8 @@ if __name__ == "__main__":
     # line接続設定
     channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
     line_client = line(channel_access_token)
+
+    print(line_client.reply_gpt_response("test", "test", "test"))
 
     # gpt接続設定
     gpt_model = config["gpt"]["model"]
