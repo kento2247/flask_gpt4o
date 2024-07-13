@@ -2,3 +2,4 @@
 .DS_Store
 .python-version
 src/__pycache__/
+demo.py

@@ -81,5 +81,5 @@ if __name__ == "__main__":
     channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
     line_client = line(channel_access_token)
 
-    # del_mongodb_lineid("Uaedb10ed004057a7f73606b62ecfc6f7")
-    line_push_demo("Uaedb10ed004057a7f73606b62ecfc6f7")
+    del_mongodb_lineid("Uaedb10ed004057a7f73606b62ecfc6f7")
+    # line_push_demo("Uaedb10ed004057a7f73606b62ecfc6f7")
