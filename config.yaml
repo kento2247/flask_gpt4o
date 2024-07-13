@@ -1,0 +1,10 @@
+gpt:
+  model: gpt-4o
+mongodb:
+  app_name: gpt4otest
+  db_name: messages
+server:
+  port: 3011
+line:
+  template_path:
+    gpt_response: json/gpt_response_template.json

@@ -6,7 +6,7 @@
         "contents": [
             {
                 "type": "text",
-                "text": "Interviewer",
+                "text": "session_id",
                 "weight": "bold",
                 "size": "xl"
             },
@@ -16,6 +16,10 @@
                 "margin": "lg",
                 "spacing": "sm",
                 "contents": [
+                    {
+                        "type": "separator",
+                        "margin": "none"
+                    },
                     {
                         "type": "box",
                         "layout": "baseline",
@@ -30,7 +34,7 @@
                             },
                             {
                                 "type": "text",
-                                "text": "こんにちは",
+                                "text": "こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．こんにちは．",
                                 "wrap": true,
                                 "color": "#666666",
                                 "size": "sm",
@@ -47,6 +51,9 @@
         "layout": "vertical",
         "spacing": "sm",
         "contents": [
+            {
+                "type": "separator"
+            },
             {
                 "type": "button",
                 "style": "secondary",

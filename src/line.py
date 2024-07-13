@@ -1,0 +1,54 @@
+import json
+
+import requests
+import yaml
+
+
+class line:
+    def __init__(self, channel_access_token: str):
+        self.channnel_access_token = channel_access_token
+        self.headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.channnel_access_token}",
+        }
+        self.config = yaml.safe_load(open("config.yaml"))
+
+    def reply(self, reply_token: str, message: str) -> str:
+        response_json = {
+            "replyToken": reply_token,
+            "messages": [{"type": "text", "text": message}],
+        }
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers=self.headers,
+            json=response_json,
+        )
+        if response.status_code != 200:
+            print(response.text)
+
+    def get_profile(self, user_id: str) -> dict:
+        response = requests.get(
+            f"https://api.line.me/v2/bot/profile/{user_id}",
+            headers=self.headers,
+        )
+        if response.status_code != 200:
+            print(response.text)
+
+    def reply_gpt_response(
+        self, reply_token: str, session_id: str, message: str
+    ) -> str:
+        json_path = self.config["line"]["template_path"]["gpt_response"]
+        template = json.load(open(json_path))
+        template["body"]["contents"][0]["text"] = session_id
+        template["body"]["contents"][1]["contents"][0]["contents"][1]["text"] = message
+        response_json = {
+            "replyToken": reply_token,
+            "messages": template,
+        }
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers=self.headers,
+            json=response_json,
+        )
+        if response.status_code != 200:
+            print(response.text)
