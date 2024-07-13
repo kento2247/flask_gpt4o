@@ -43,18 +43,17 @@ class line:
         template["body"]["contents"][0]["text"] = session_id
         template["body"]["contents"][1]["contents"][1]["contents"][1]["text"] = message
 
-        return template
-        # response_json = {
-        #     "replyToken": reply_token,
-        #     "messages": template,
-        # }
-        # response = requests.post(
-        #     "https://api.line.me/v2/bot/message/reply",
-        #     headers=self.headers,
-        #     json=response_json,
-        # )
-        # if response.status_code != 200:
-        #     print(response.text)
+        response_json = {
+            "replyToken": reply_token,
+            "messages": template,
+        }
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers=self.headers,
+            json=response_json,
+        )
+        if response.status_code != 200:
+            print(response.text)
 
     def reply_interview_end(self, reply_token: str):
         json_path = self.config["line"]["template_path"]["interview_end"]

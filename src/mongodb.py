@@ -65,3 +65,12 @@ class mongodb:
             {"session_id": session_id, "line_id": line_id},
             {"$set": {"data": messages["data"]}},
         )
+
+    def delete_lineid(self, line_id: str) -> None:
+        self.db.delete_many({"line_id": line_id})
+        return None
+
+    def delete_sessionid(self, line_id: str) -> None:
+        session_id = self.sessionid_dict[line_id]
+        self.db.delete_many({"session_id": session_id})
+        return None
