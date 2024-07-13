@@ -89,6 +89,17 @@ def keep_alive():
     return "OK"
 
 
+@app.route("/friend_list", methods=["get"])
+def friend_list():
+    line_ids = mongo_db_client.sessionid_dict.keys()
+    friend_list = []
+    for line_id in line_ids:
+        profile = line_client.get_profile(line_id)
+        friend_list.append(profile)
+    print(friend_list)
+    return {"friend_list": friend_list}
+
+
 if __name__ == "__main__":
     config = yaml.safe_load(open("config.yaml"))
 
