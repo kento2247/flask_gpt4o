@@ -24,7 +24,8 @@ class line:
             json=response_json,
         )
         if response.status_code != 200:
-            print(response.text)
+            raise Exception(response.text)
+        print(response.text)
 
     def get_profile(self, user_id: str) -> dict:
         response = requests.get(
@@ -34,8 +35,7 @@ class line:
         if response.status_code == 200:
             return response.json()
         else:
-            print(response.text)
-            return {}
+            raise Exception(response.text)
 
     def reply_gpt_response(self, reply_token: str, session_id: str, message: str):
         json_path = self.config["line"]["template_path"]["gpt_response"]
@@ -53,7 +53,8 @@ class line:
             json=response_json,
         )
         if response.status_code != 200:
-            print(response.text)
+            raise Exception(response.text)
+        print(response.text)
 
     def reply_interview_end(self, reply_token: str):
         json_path = self.config["line"]["template_path"]["interview_end"]
@@ -68,4 +69,5 @@ class line:
             json=response_json,
         )
         if response.status_code != 200:
-            print(response.text)
+            raise Exception(response.text)
+        print(response.text)
