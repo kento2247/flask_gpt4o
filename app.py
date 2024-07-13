@@ -47,8 +47,9 @@ def callback():
     for event in events:
         reply_token = event["replyToken"]
         line_id = event["source"]["userId"]
-        session_id = mongo_db_client.sessionid_dict[line_id]
+        session_id = ""
         if event["type"] == "message" and event["message"]["type"] == "text":
+            session_id = mongo_db_client.sessionid_dict[line_id]
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
             if len(messages) == 1:  # 初回メッセージ，またはリセット後のメッセージ
                 line_gpt_response(messages, line_id, reply_token, session_id)
@@ -74,8 +75,9 @@ def callback():
                     "content": config["initial_message"],
                 }
             ]
-            line_gpt_response(messages, line_id, reply_token, session_id)
             mongo_db_client.initialize_messages(line_id)
+            session_id = mongo_db_client.sessionid_dict[line_id]
+            line_gpt_response(messages, line_id, reply_token, session_id)
             break
 
     return "OK"
