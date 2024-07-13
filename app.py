@@ -51,31 +51,31 @@ def callback():
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
             if len(messages) == 1:  # 初回メッセージ，またはリセット後のメッセージ
                 line_gpt_response(messages, line_id, reply_token, session_id)
+                break
             else:  # 2回目以降のメッセージ
                 user_message = event["message"]["text"]
                 if user_message == "exit":  # 会話履歴のリセット
-                    line_client.reply(
-                        reply_token,
-                        "会話履歴をリセットしました\n何かしらのメッセージの送信で会話を再開します",
-                    )
+                    line_client.reply_interview_end(reply_token)
                     mongo_db_client.initialize_messages(line_id)
-                    return "OK"
+                    break
                 else:  # 通常の会話
                     content_dict = {"role": "user", "content": user_message}
                     messages.append(content_dict)
                     line_gpt_response(messages, line_id, reply_token, session_id)
                     mongo_db_client.insert_message(line_id, content_dict)
+                    break
 
         # 友達追加やブロック解除のイベント
         elif event["type"] == "follow":
             messages = [
                 {
                     "role": "system",
-                    "content": "あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．",
+                    "content": config["initial_message"],
                 }
             ]
             line_gpt_response(messages, line_id, reply_token, session_id)
             mongo_db_client.initialize_messages(line_id)
+            break
 
     return "OK"
 

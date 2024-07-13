@@ -1,5 +1,6 @@
 import uuid
 
+import yaml
 from pymongo.mongo_client import MongoClient
 
 
@@ -11,6 +12,7 @@ class mongodb:
         self.client = MongoClient(self.MONGO_URI)
         self.db = self.client[app_name][db_name]
         self.sessionid_dict = {}
+        self.config = yaml.safe_load(open("config.yaml"))
 
         # endが存在しないcollectionの一覧を取得
         session_count = self.db.count_documents({"end": {"$exists": False}})
@@ -21,11 +23,11 @@ class mongodb:
                 session_id = session["session_id"]
                 self.sessionid_dict[line_id] = session_id
 
-    def initialize_messages(self, line_id: str, initial_message: str) -> None:
+    def initialize_messages(self, line_id: str) -> None:
         initial_message_json = [
             {
                 "role": "system",
-                "content": initial_message,
+                "content": self.config["initial_message"],
             }
         ]
         if line_id in self.sessionid_dict:
