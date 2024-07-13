@@ -5,6 +5,7 @@ import requests
 import yaml
 from dotenv import load_dotenv
 
+from src.line import line
 from src.mongodb import mongodb
 
 config = None
@@ -40,6 +41,10 @@ def del_mongodb_lineid(line_id: str):
     mongo_db_client.delete_lineid(line_id)
 
 
+def line_push_demo(line_id: str):
+    line_client.push_gpt_response(line_id, "test", "test")
+
+
 if __name__ == "__main__":
     config = yaml.safe_load(open("config.yaml"))
 
@@ -73,4 +78,8 @@ if __name__ == "__main__":
         db_name=mongodb_db_name,
     )
 
-    del_mongodb_lineid("Uaedb10ed004057a7f73606b62ecfc6f7")
+    channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+    line_client = line(channel_access_token)
+
+    # del_mongodb_lineid("Uaedb10ed004057a7f73606b62ecfc6f7")
+    line_push_demo("Uaedb10ed004057a7f73606b62ecfc6f7")

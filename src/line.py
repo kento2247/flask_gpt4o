@@ -25,7 +25,6 @@ class line:
         )
         if response.status_code != 200:
             raise Exception(response.text)
-        print(response.text)
 
     def get_profile(self, user_id: str) -> dict:
         response = requests.get(
@@ -45,7 +44,13 @@ class line:
 
         response_json = {
             "replyToken": reply_token,
-            "messages": template,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": "This is a Flex Message",
+                    "contents": template,
+                }
+            ],
         }
         response = requests.post(
             "https://api.line.me/v2/bot/message/reply",
@@ -54,14 +59,19 @@ class line:
         )
         if response.status_code != 200:
             raise Exception(response.text)
-        print(response.text)
 
     def reply_interview_end(self, reply_token: str):
         json_path = self.config["line"]["template_path"]["interview_end"]
         template = json.load(open(json_path))
         response_json = {
             "replyToken": reply_token,
-            "messages": template,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": "This is a Flex Message",
+                    "contents": template,
+                }
+            ],
         }
         response = requests.post(
             "https://api.line.me/v2/bot/message/reply",
@@ -70,4 +80,27 @@ class line:
         )
         if response.status_code != 200:
             raise Exception(response.text)
-        print(response.text)
+
+    def push_gpt_response(self, line_id: str, session_id: str, message: str):
+        json_path = self.config["line"]["template_path"]["gpt_response"]
+        template = json.load(open(json_path))
+        template["body"]["contents"][0]["text"] = session_id
+        template["body"]["contents"][1]["contents"][1]["contents"][1]["text"] = message
+
+        response_json = {
+            "to": line_id,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": "This is a Flex Message",
+                    "contents": template,
+                }
+            ],
+        }
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/push",
+            headers=self.headers,
+            json=response_json,
+        )
+        if response.status_code != 200:
+            raise Exception(response.text)
