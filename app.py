@@ -32,7 +32,6 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    response_text = ""
     line_id = ""
     reply_token = ""
     session_id = ""
@@ -43,6 +42,7 @@ def callback():
     events = body.get("events", [])
 
     for event in events:
+        print(event)
         reply_token = event["replyToken"]
         line_id = event["source"]["userId"]
         session_id = mongo_db_client.sessionid_dict[line_id]
