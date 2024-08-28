@@ -2,9 +2,18 @@
 
 ## setup
 
-```bash
-pip install -r requirements.txt
-```
+1. install dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. add .env file
+   ```bash
+    OPENAI_API_KEY=YOUR_API_KEY
+    LINE_CHANNEL_ACCESS_TOKEN=YOUR_ACCESS_TOKEN
+    GEMINI_API_KEY=YOUR_API_KEY
+    MONGODB_USERNAME=admin
+    MONGODB_PASSWORD=admin
+   ```
 
 ## run
 
