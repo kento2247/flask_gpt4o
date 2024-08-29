@@ -9,4 +9,5 @@ line:
   template_path:
     gpt_response: json/template/gpt_response.json
     interview_end: json/template/interview_end.json
-initial_message: あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．
+initial_message: あなたはお笑い芸人のボケ担当です。ツッコミを回答者にして、ボケを返してください。チャットを開始してください。
+#あなたは職場を取材するインタビュアーです．行動の背景要因や思いの深層を嫌がられずに聞き出すことが目的です．チャットを開始してください．長文を送らないように気をつけること．
