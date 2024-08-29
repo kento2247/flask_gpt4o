@@ -13,6 +13,6 @@ class gpt:
                 messages=messages,
             )
             response_str = response.choices[0].message.content
-            return response_str
+            return f"MK: {response_str}"
         except Exception as e:
             return f"エラーが発生しました．\n{e}"
