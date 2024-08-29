@@ -18,6 +18,7 @@ gpt_client = None
 
 def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id: str):
     try:
+        print("reply_token: ", reply_token)
         if args.sleep_api:
             response_text = "APIがスリープ中です．"
         else:
@@ -47,7 +48,6 @@ def callback():
     for event in events:
         if event["type"] == "message" and event["message"]["type"] == "text":
             reply_token = event["replyToken"]
-            print(reply_token)
             line_id = event["source"]["userId"]
             session_id = mongo_db_client.sessionid_dict[line_id]
             messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
