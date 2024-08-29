@@ -18,7 +18,6 @@ gpt_client = None
 
 def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id: str):
     try:
-        print("reply_token: ", reply_token)
         if args.sleep_api:
             response_text = "APIがスリープ中です．"
         else:
