@@ -1,0 +1,22 @@
+{
+  "action": {
+    "content": {},
+    "procedure":{},
+    "timepressure":{},
+    "familierly":{}
+  },
+  "recognition": {
+    "notion": {},
+    "purpose":{},
+    "possibility":{},
+    "necesity":{}
+  },
+  "imformation": {
+    "knowledge": {},
+    "experience":{}
+  },
+  "mentalsimulation": {
+    "basis": {},
+    "alternative":{}
+  }
+}
