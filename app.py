@@ -49,6 +49,7 @@ def callback():
     messages = []
     # リクエストボディを取得
     parse_data = line_client.parse_webhook(request.json)
+    print("aaa\n", parse_data)
     event_type = parse_data["event_type"]
     line_id = parse_data["line_id"]
     reply_token = parse_data["reply_token"]
