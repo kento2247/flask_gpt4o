@@ -23,8 +23,6 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
         else:
             response_text = gpt_client.get_response(messages)
 
-        # ここで「MK:」を追加
-        response_text = f"MK: {response_text}"
         
         line_client.reply_gpt_response(
             reply_token=reply_token, session_id=session_id, message=response_text
