@@ -24,12 +24,12 @@ class mongodb:
                 self.sessionid_dict[line_id] = session_id
 
     def initialize_messages(self, line_id: str) -> None:
-        initial_message_json = [
-            {
-                "role": "system",
-                "content": self.config["initial_message"],
-            }
-        ]
+        # initial_message_json = [
+        #     {
+        #         "role": "system",
+        #         "content": self.config["initial_message"],
+        #     }
+        # ]
         if line_id in self.sessionid_dict:
             session_id = self.sessionid_dict[line_id]
             # 終了記号を追加
@@ -43,7 +43,7 @@ class mongodb:
         new_messages = {
             "session_id": new_session_id,
             "line_id": line_id,
-            "data": initial_message_json,
+            "data": [],
         }
         self.db.insert_one(new_messages)
         self.sessionid_dict[line_id] = new_session_id

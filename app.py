@@ -40,7 +40,6 @@ def callback():
     reply_token = ""
     session_id = ""
     messages = []
-
     # リクエストボディを取得
     body = request.json
     events = body.get("events", [])
