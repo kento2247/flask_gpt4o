@@ -82,7 +82,7 @@ class line:
             "width"
         ] = percentage1
         template["body"]["contents"][1]["contents"][0]["contents"][1][
-            "text"
+            "width"
         ] = percentage2
         template["body"]["contents"][2]["contents"][1]["contents"][1]["text"] = message
 
