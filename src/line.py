@@ -36,11 +36,24 @@ class line:
         else:
             raise Exception(response.text)
 
-    def reply_gpt_response(self, reply_token: str, session_id: str, message: str):
+    def reply_gpt_response(
+        self,
+        reply_token: str,
+        session_id: str,
+        message: str,
+        progress_child: int = 0,
+        progress_parent: int = 12,
+    ):
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
+        percentage = progress_child / progress_parent * 100
+        percentage = f"{percentage:.0f}%"
+
         template["body"]["contents"][0]["text"] = session_id
-        template["body"]["contents"][1]["contents"][1]["contents"][1]["text"] = message
+        template["body"]["contents"][1]["contents"][0]["contents"][0][
+            "width"
+        ] = percentage
+        template["body"]["contents"][2]["contents"][1]["contents"][1]["text"] = message
 
         response_json = {
             "replyToken": reply_token,

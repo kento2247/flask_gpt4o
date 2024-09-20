@@ -13,6 +13,35 @@
             {
                 "type": "box",
                 "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [],
+                                "width": "70%",
+                                "backgroundColor": "#00B900",
+                                "height": "10px"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [],
+                                "width": "30%",
+                                "backgroundColor": "#DDDDDD",
+                                "height": "10px"
+                            }
+                        ]
+                    }
+                ],
+                "margin": "md"
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
                 "margin": "lg",
                 "spacing": "sm",
                 "contents": [
