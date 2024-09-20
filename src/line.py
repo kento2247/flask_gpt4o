@@ -46,13 +46,18 @@ class line:
     ):
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
-        percentage = progress_child / progress_parent * 100
-        percentage = f"{percentage:.0f}%"
+        percentage1 = progress_child / progress_parent * 100
+        percentage2 = 100 - percentage1
+        percentage1 = f"{percentage1:.0f}%"
+        percentage2 = f"{percentage2:.0f}%"
 
         template["body"]["contents"][0]["text"] = session_id
         template["body"]["contents"][1]["contents"][0]["contents"][0][
             "width"
-        ] = percentage
+        ] = percentage1
+        template["body"]["contents"][1]["contents"][0]["contents"][1][
+            "text"
+        ] = percentage2
         template["body"]["contents"][2]["contents"][1]["contents"][1]["text"] = message
 
         response_json = {
