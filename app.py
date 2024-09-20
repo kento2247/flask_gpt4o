@@ -56,7 +56,7 @@ def callback():
 
     if event_type == "message":
         messages = mongo_db_client.get_messages(line_id)
-        if len(messages) == 1:
+        if len(messages) <= 1:
             line_gpt_response(messages, line_id, reply_token, session_id)
         else:
             if message == "exit":
