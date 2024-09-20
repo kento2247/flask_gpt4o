@@ -41,7 +41,7 @@ class line:
         reply_token: str,
         session_id: str,
         message: str,
-        progress_child: int = 0,
+        progress_child: int = 7,
         progress_parent: int = 12,
     ):
         json_path = self.config["line"]["template_path"]["gpt_response"]

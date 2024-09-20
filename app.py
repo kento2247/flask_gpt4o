@@ -23,8 +23,15 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
         else:
             response_text = gpt_client.get_response(messages)
 
+        progress_child = 7  # TODO
+        progress_parent = 12  # TODO
+
         line_client.reply_gpt_response(
-            reply_token=reply_token, session_id=session_id, message=response_text
+            reply_token=reply_token,
+            session_id=session_id,
+            message=response_text,
+            progress_child=progress_child,
+            progress_parent=progress_parent,
         )  # lineでの返信
         content_list = [messages[-1], {"role": "assistant", "content": response_text}]
         mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
