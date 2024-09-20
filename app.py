@@ -48,44 +48,42 @@ def callback():
     session_id = ""
     messages = []
     # リクエストボディを取得
-    body = request.json
-    events = body.get("events", [])
+    parse_data = line_client.parse_webhook(request.json)
+    event_type = parse_data["event_type"]
+    line_id = parse_data["line_id"]
+    reply_token = parse_data["reply_token"]
+    message = parse_data["message"]
 
-    for event in events:
-        if event["type"] == "message" and event["message"]["type"] == "text":
-            reply_token = event["replyToken"]
-            line_id = event["source"]["userId"]
-            session_id = mongo_db_client.sessionid_dict[line_id]
-            messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
-            if len(messages) == 1:  # 初回メッセージ，またはリセット後のメッセージ
-                line_gpt_response(messages, line_id, reply_token, session_id)
-                break
-            else:  # 2回目以降のメッセージ
-                user_message = event["message"]["text"]
-                if user_message == "exit":  # 会話履歴のリセット
-                    line_client.reply_interview_end(reply_token)
-                    mongo_db_client.initialize_messages(line_id)
-                    break
-                else:  # 通常の会話
-                    content_dict = {"role": "user", "content": user_message}
-                    messages.append(content_dict)
-                    line_gpt_response(messages, line_id, reply_token, session_id)
-                    break
-
-        # 友達追加やブロック解除のイベント
-        elif event["type"] == "follow":
-            reply_token = event["replyToken"]
-            line_id = event["source"]["userId"]
-            messages = [
-                {
-                    "role": "system",
-                    "content": config["initial_message"],
-                }
-            ]
-            mongo_db_client.initialize_messages(line_id)
-            session_id = mongo_db_client.sessionid_dict[line_id]
+    if event_type == "message":
+        messages = mongo_db_client.get_messages(line_id)
+        if len(messages) == 1:
             line_gpt_response(messages, line_id, reply_token, session_id)
-            break
+        else:
+            if message == "exit":
+                line_client.reply_interview_end(reply_token)
+                mongo_db_client.initialize_messages(line_id)
+            elif message == "resume":
+                line_client.reply_gpt_response(
+                    reply_token=reply_token,
+                    session_id=session_id,
+                    message=messages[-1]["content"],
+                    progress_child=7,
+                    progress_parent=12,
+                )  # lineでの返信
+            else:
+                content_dict = {"role": "user", "content": message}
+                messages.append(content_dict)
+                line_gpt_response(messages, line_id, reply_token, session_id)
+    elif event_type == "follow":
+        messages = [
+            {
+                "role": "system",
+                "content": config["initial_message"],
+            }
+        ]
+        mongo_db_client.initialize_messages(line_id)
+        session_id = mongo_db_client.sessionid_dict[line_id]
+        line_gpt_response(messages, line_id, reply_token, session_id)
 
     return "OK"
 
