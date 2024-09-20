@@ -13,6 +13,32 @@ class line:
         }
         self.config = yaml.safe_load(open("config.yaml"))
 
+    def parse_webhook(self, request_json: dict) -> list:
+        response = {
+            "event_type": None,
+            "line_id": None,
+            "reply_token": None,
+            "message": None,
+        }
+        events = request_json.get("events", [])
+
+        for event in events:
+            if event["type"] == "message" and event["message"]["type"] == "text":
+                response["event_type"] = "message"
+                response["line_id"] = event["source"]["userId"]
+                response["reply_token"] = event["replyToken"]
+                response["message"] = event["message"]["text"]
+                break
+
+            # 友達追加やブロック解除のイベント
+            elif event["type"] == "follow":
+                response["event_type"] = "follow"
+                response["line_id"] = event["source"]["userId"]
+                response["reply_token"] = event["replyToken"]
+                break
+
+        return response
+
     def reply(self, reply_token: str, message: str):
         response_json = {
             "replyToken": reply_token,
