@@ -55,12 +55,14 @@ class mongodb:
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         return messages["data"]
 
-    def insert_message(self, line_id: str, content_dict: dict) -> None:
+    def insert_message(self, line_id: str, content_list: list[dict]) -> None:
+        if type(content_list) is not list:
+            content_list = [content_list]
         if line_id not in self.sessionid_dict:
             self.initialize_messages(line_id)
         session_id = self.sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
-        messages["data"].append(content_dict)
+        messages["data"].extend(content_list)
         self.db.update_one(
             {"session_id": session_id, "line_id": line_id},
             {"$set": {"data": messages["data"]}},

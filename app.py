@@ -23,12 +23,11 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
         else:
             response_text = gpt_client.get_response(messages)
 
-        
         line_client.reply_gpt_response(
             reply_token=reply_token, session_id=session_id, message=response_text
         )  # lineでの返信
-        content_dict = {"role": "assistant", "content": response_text}
-        mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
+        content_list = [messages[-1], {"role": "assistant", "content": response_text}]
+        mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
     except Exception as e:
         response_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
@@ -65,7 +64,6 @@ def callback():
                     content_dict = {"role": "user", "content": user_message}
                     messages.append(content_dict)
                     line_gpt_response(messages, line_id, reply_token, session_id)
-                    mongo_db_client.insert_message(line_id, content_dict)
                     break
 
         # 友達追加やブロック解除のイベント
