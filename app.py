@@ -50,6 +50,7 @@ def line_gpt_response(
             )
             return
         else:
+            response_text = ""
             if message == None:
                 messages = [
                     {
@@ -68,6 +69,7 @@ def line_gpt_response(
                 mongo_db_client.initialize_messages(
                     line_id
                 )  # 既存のセッションがあれば終了させ，新しいセッションを作成
+                return
             else:
                 messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
                 if len(messages) <= 1:  # exitからの再開の場合
