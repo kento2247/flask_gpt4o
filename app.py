@@ -29,11 +29,22 @@ def line_gpt_response(
             return
         elif message == "resume":
             messages = mongo_db_client.get_messages(line_id)
-            progress = 7
+            reply_message = ""
+            if len(messages) <=1: # exitからの再開の場合
+                messages = [
+                    {
+                        "role": "system",
+                        "content": config["initial_message"],
+                    }
+                ]
+                reply_message = gpt_client.get_response(messages)
+            else:
+                progress = 7
+                reply_message = messages[-1]["content"]
             line_client.reply_gpt_response(
                 reply_token=reply_token,
                 session_id=session_id,
-                message=messages[-1]["content"],  # 最後のメッセージを再送信
+                message=reply_message,
                 progress=progress,
                 progress_max=progress_max,
             )
