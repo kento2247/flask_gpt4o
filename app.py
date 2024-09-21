@@ -30,6 +30,7 @@ def line_gpt_response(
         elif message == "resume":
             messages = mongo_db_client.get_messages(line_id)
             reply_message = ""
+            progress = 0
             if len(messages) <=1: # exitからの再開の場合
                 messages = [
                     {
@@ -97,9 +98,8 @@ def line_gpt_response(
                 {"role": "assistant", "content": response_text},
             ]
             mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
-
     except Exception as e:
-        error_text += f"エラーが発生しました．\n{e}"
+        error_text = f"エラーが発生しました．\n{e}"
         app.logger.error(e)
         line_client.reply(reply_token, error_text)
         # line_client.push_gpt_response(line_id, session_id, "error")
