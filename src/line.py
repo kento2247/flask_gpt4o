@@ -125,11 +125,30 @@ class line:
         if response.status_code != 200:
             raise Exception(response.text)
 
-    def push_gpt_response(self, line_id: str, session_id: str, message: str):
+    def push_gpt_response(
+        self,
+        line_id: str,
+        session_id: str,
+        message: str,
+        progress_child: int = 7,
+        progress_parent: int = 12,
+    ):
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
+
+        progress1 = progress_child / progress_parent * 100
+        progress2 = 100 - progress1
+        progress1 = f"{progress1:.0f}%"
+        progress2 = f"{progress2:.0f}%"
+
         template["body"]["contents"][0]["text"] = session_id
-        template["body"]["contents"][1]["contents"][1]["contents"][1]["text"] = message
+        template["body"]["contents"][1]["contents"][0]["contents"][0][
+            "width"
+        ] = progress1
+        template["body"]["contents"][1]["contents"][0]["contents"][1][
+            "width"
+        ] = progress2
+        template["body"]["contents"][2]["contents"][1]["contents"][1]["text"] = message
 
         response_json = {
             "to": line_id,

@@ -39,6 +39,7 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
         response_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
         line_client.reply(reply_token, response_text)
+        # line_client.push_gpt_response(line_id, session_id, "error")
 
 
 @app.route("/callback", methods=["POST"])
@@ -49,11 +50,13 @@ def callback():
     messages = []
     # リクエストボディを取得
     parse_data = line_client.parse_webhook(request.json)
-    print("aaa\n", parse_data)
+
     event_type = parse_data["event_type"]
     line_id = parse_data["line_id"]
     reply_token = parse_data["reply_token"]
     message = parse_data["message"]
+
+    session_id = mongo_db_client.sessionid_dict[line_id]
 
     if event_type == "message":
         messages = mongo_db_client.get_messages(line_id)
@@ -67,7 +70,7 @@ def callback():
                 line_client.reply_gpt_response(
                     reply_token=reply_token,
                     session_id=session_id,
-                    message=messages[-1]["content"],
+                    message=messages[-1]["content"],  # 最後のメッセージを再送信
                     progress_child=7,
                     progress_parent=12,
                 )  # lineでの返信
@@ -83,7 +86,6 @@ def callback():
             }
         ]
         mongo_db_client.initialize_messages(line_id)
-        session_id = mongo_db_client.sessionid_dict[line_id]
         line_gpt_response(messages, line_id, reply_token, session_id)
 
     return "OK"
