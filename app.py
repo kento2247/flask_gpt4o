@@ -5,9 +5,6 @@ import yaml
 from dotenv import load_dotenv
 from flask import Flask, request
 
-from src.gpt import gpt
-from src.line import line
-from src.mongodb import mongodb
 
 app = Flask(__name__)
 args = None
@@ -138,11 +135,7 @@ def friend_list():
     print(friend_list)
     return {"friend_list": friend_list}
 
-
-if __name__ == "__main__":
-    config = yaml.safe_load(open("config.yaml"))
-
-    # コマンドライン引数の取得
+def parser()->argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
@@ -155,8 +148,14 @@ if __name__ == "__main__":
         help="Sleep OpenAI API",
     )
     args = parser.parse_args()
+    return args
 
-    # 環境変数の読み込み
+if __name__ == "__main__":
+    config = yaml.safe_load(open("config.yaml"))
+
+    args = parser()
+    args.config = config
+
     if args.load_env:
         load_dotenv()
 
