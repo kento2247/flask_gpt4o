@@ -50,7 +50,6 @@ def line_gpt_response(
             )
             return
         else:
-            response_text = ""
             if message == None:
                 messages = [
                     {
@@ -100,9 +99,9 @@ def line_gpt_response(
             mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
 
     except Exception as e:
-        response_text += f"エラーが発生しました．\n{e}"
+        error_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
-        line_client.reply(reply_token, response_text)
+        line_client.reply(reply_token, error_text)
         # line_client.push_gpt_response(line_id, session_id, "error")
 
 
