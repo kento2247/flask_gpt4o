@@ -67,12 +67,12 @@ class line:
         reply_token: str,
         session_id: str,
         message: str,
-        progress_child: int = 7,
-        progress_parent: int = 12,
+        progress: int = 7,
+        progress_max: int = 12,
     ):
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
-        percentage1 = progress_child / progress_parent * 100
+        percentage1 = progress / progress_max * 100
         percentage2 = 100 - percentage1
         percentage1 = f"{percentage1:.0f}%"
         percentage2 = f"{percentage2:.0f}%"
@@ -130,13 +130,13 @@ class line:
         line_id: str,
         session_id: str,
         message: str,
-        progress_child: int = 7,
-        progress_parent: int = 12,
+        progress: int = 7,
+        progress_max: int = 12,
     ):
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
 
-        progress1 = progress_child / progress_parent * 100
+        progress1 = progress / progress_max * 100
         progress2 = 100 - progress1
         progress1 = f"{progress1:.0f}%"
         progress2 = f"{progress2:.0f}%"

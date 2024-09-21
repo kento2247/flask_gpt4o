@@ -5,6 +5,8 @@ mongodb:
   db_name: messages
 server:
   port: 3011
+flow:
+  progress_max: 12
 line:
   template_path:
     gpt_response: template/gpt_response.json

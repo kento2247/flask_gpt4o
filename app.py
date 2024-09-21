@@ -16,25 +16,76 @@ line_client = None
 gpt_client = None
 
 
-def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id: str):
+def line_gpt_response(
+    line_id: str, reply_token: str, message: str, progress_max: int = 12
+):
     try:
-        if args.sleep_api:
-            response_text = "APIがスリープ中です．"
+        session_id = mongo_db_client.sessionid_dict[line_id]
+        messages = []
+
+        if message == "exit":
+            line_client.reply_interview_end(reply_token)
+            mongo_db_client.initialize_messages(line_id)
+            return
+        elif message == "resume":
+            messages = mongo_db_client.get_messages(line_id)
+            progress = 7
+            line_client.reply_gpt_response(
+                reply_token=reply_token,
+                session_id=session_id,
+                message=messages[-1]["content"],  # 最後のメッセージを再送信
+                progress=progress,
+                progress_max=progress_max,
+            )
+            return
         else:
-            response_text = gpt_client.get_response(messages)
+            if message == None:
+                messages = [
+                    {
+                        "role": "system",
+                        "content": config["initial_message"],
+                    }
+                ]
+                response_text = gpt_client.get_response(messages)
+                line_client.reply_gpt_response(
+                    reply_token=reply_token,
+                    session_id=session_id,
+                    message=response_text,
+                    progress=0,
+                    progress_max=progress_max,
+                )  # lineでの返信
+                mongo_db_client.initialize_messages(
+                    line_id
+                )  # 既存のセッションがあれば終了させ，新しいセッションを作成
+            else:
+                messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
+                if len(messages) <= 1:  # exitからの再開の場合
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": config["initial_message"],
+                        }
+                    ]
+                else:
+                    content_dict = {"role": "user", "content": message}
+                    messages.append(content_dict)
 
-        progress_child = 7  # TODO
-        progress_parent = 12  # TODO
+                response_text = gpt_client.get_response(messages)
+                progress = 7
+                line_client.reply_gpt_response(
+                    reply_token=reply_token,
+                    session_id=session_id,
+                    message=response_text,
+                    progress=progress,
+                    progress_max=progress_max,
+                )
 
-        line_client.reply_gpt_response(
-            reply_token=reply_token,
-            session_id=session_id,
-            message=response_text,
-            progress_child=progress_child,
-            progress_parent=progress_parent,
-        )  # lineでの返信
-        content_list = [messages[-1], {"role": "assistant", "content": response_text}]
-        mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
+            content_list = [
+                messages[-1],
+                {"role": "assistant", "content": response_text},
+            ]
+            mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
+
     except Exception as e:
         response_text += f"エラーが発生しました．\n{e}"
         app.logger.error(e)
@@ -44,10 +95,6 @@ def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    line_id = ""
-    reply_token = ""
-    session_id = ""
-    messages = []
     # リクエストボディを取得
     parse_data = line_client.parse_webhook(request.json)
 
@@ -56,37 +103,10 @@ def callback():
     reply_token = parse_data["reply_token"]
     message = parse_data["message"]
 
-    session_id = mongo_db_client.sessionid_dict[line_id]
-
     if event_type == "message":
-        messages = mongo_db_client.get_messages(line_id)
-        if len(messages) <= 1:
-            line_gpt_response(messages, line_id, reply_token, session_id)
-        else:
-            if message == "exit":
-                line_client.reply_interview_end(reply_token)
-                mongo_db_client.initialize_messages(line_id)
-            elif message == "resume":
-                line_client.reply_gpt_response(
-                    reply_token=reply_token,
-                    session_id=session_id,
-                    message=messages[-1]["content"],  # 最後のメッセージを再送信
-                    progress_child=7,
-                    progress_parent=12,
-                )  # lineでの返信
-            else:
-                content_dict = {"role": "user", "content": message}
-                messages.append(content_dict)
-                line_gpt_response(messages, line_id, reply_token, session_id)
+        line_gpt_response(line_id, reply_token, message)
     elif event_type == "follow":
-        messages = [
-            {
-                "role": "system",
-                "content": config["initial_message"],
-            }
-        ]
-        mongo_db_client.initialize_messages(line_id)
-        line_gpt_response(messages, line_id, reply_token, session_id)
+        line_gpt_response(line_id, reply_token, None)
 
     return "OK"
 
@@ -147,7 +167,7 @@ if __name__ == "__main__":
     # gpt接続設定
     gpt_model = config["gpt"]["model"]
     openai_api_key = os.getenv("OPENAI_API_KEY")
-    gpt_client = gpt(model=gpt_model, api_key=openai_api_key)
+    gpt_client = gpt(model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api)
 
     # サーバーの起動
     server_port = config["server"]["port"]
