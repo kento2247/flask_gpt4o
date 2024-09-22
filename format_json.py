@@ -1,0 +1,13 @@
+import json
+
+# JSON形式の一行の文字列
+json_data = """{\n\"action\": {\n    \"monitoring\": \"モニターの監視を行い、異常がないか確認している。\",\n    \"comparison\": \"画面の情報を見比べて、赤い警告表示がないか探している。\",\n    \"response\": \"警告表示を見つけた際には、安全マニュアルに従って行動する。\",\n    \"pressure\": \"時間的な制約はあるが、焦らずに行動することが重要であると認識している。\"\n},\n\"recognition\": {\n    \"threat_awareness\": \"赤い警告表示を見つけたとき、プラントの安全が脅かされていると感じる。\",\n    \"emotional_response\": \"異常を発見した際に焦りを感じるが、冷静に対応しなければならないと理解している。\",\n    \"critical_judgement\": \"重大な局面で何が大切か見極める力が必要と認識している。\"\n},\n\"information\": {\n    \"sources\": \"安全マニュアル、先輩の教え、過去のシミュレーションの経験。\",\n    \"critical_knowledge\": \"プラントの稼働停止手順や警告の対処方法。\",\n    \"experience\": \"経験が重要であり、特にシミュレーションを通じて得た経験が役立つと認識している。\"\n}\n}"""
+
+# JSON文字列をPythonの辞書に変換
+data = json.loads(json_data)
+
+# 整形してファイルに保存
+with open("formatted_output.json", "w", encoding="utf-8") as file:
+    json.dump(data, file, ensure_ascii=False, indent=4)
+
+print("整形されたJSONが 'formatted_output.json' ファイルに保存されました。")
