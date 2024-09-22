@@ -3,7 +3,7 @@ from src.gpt import gpt
 from src.line import line
 from src.mongodb import mongodb
 
-class line_flow:
+class message_flow:
     def __init__(self, args):
         self.args=args
         self.config=args.config
@@ -29,15 +29,34 @@ class line_flow:
         openai_api_key = os.getenv("OPENAI_API_KEY")
         self.gpt_client = gpt(model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api)
         
-    def update_history(self,messages:list, assistant_message:str, line_id:str):
-        content_list = [
-            messages[-1],
+    def message_parser(self,request_json):
+        parse_data = self.line_client.parse_webhook(request_json)
+        self.event_type = parse_data["event_type"]
+        self.line_id = parse_data["line_id"]
+        self.reply_token = parse_data["reply_token"]
+        self.message = parse_data["message"]
+        
+        if self.event_type == "follow":
+            self._follow()
+        elif self.event_type == "message":
+            if self.message == "exit":
+                self._exit()
+            else:
+                self._message() #messageの中でresumeがあるか判定
+         
+    def error_send(self, error_message:str):
+        self.line_client.reply(self.reply_token, error_message)
+        return
+ 
+    def _update_history(self, message_dict:dict, assistant_message:str):
+        content_list = [ #二つのメッセージを同時に保存(user or system, assistant)
+            message_dict,
             {"role": "assistant", "content": assistant_message},
         ]
-        self.mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
+        self.mongo_db_client.insert_message(self.line_id, content_list)  # 会話履歴の更新
     
-    def follow(self, line_id: str, reply_token: str):
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+    def _follow(self):
+        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
         messages = [
             {
                 "role": "system",
@@ -46,30 +65,30 @@ class line_flow:
         ]
         response_text = self.gpt_client.get_response(messages)
         self.line_client.reply_gpt_response(
-            reply_token=reply_token,
+            reply_token=self.reply_token,
             session_id=session_id,
             message=response_text,
             progress=0,
             progress_max=self.progress_max,
         )  # lineでの返信
         self.mongo_db_client.initialize_messages(
-            line_id
+            self.line_id
         )  # 既存のセッションがあれば終了させ，新しいセッションを作成
-        self.update_history(messages, response_text, line_id)
+        self._update_history(messages[0], response_text, self.line_id)
         return
  
-    def exit(self, line_id: str, reply_token: str):
-        self.line_client.reply_interview_end(reply_token)
-        self.mongo_db_client.initialize_messages(line_id)
+    def _exit(self):
+        self.line_client.reply_interview_end(self.reply_token)
+        self.mongo_db_client.initialize_messages(self.line_id)
         return
 
-    def resume(self, line_id: str, reply_token: str):
-        messages = self.mongo_db_client.get_messages(line_id)
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+    def _resume(self):
+        messages = self.mongo_db_client.get_messages(self.line_id)
+        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
         progress = 7
         reply_message = messages[-1]["content"] # 最後のメッセージを取得
         self.line_client.reply_gpt_response(
-            reply_token=reply_token,
+            reply_token=self.reply_token,
             session_id=session_id,
             message=reply_message,
             progress=progress,
@@ -77,9 +96,9 @@ class line_flow:
         )
         return
     
-    def message(self, line_id: str, reply_token: str, message: str):
-        messages = self.mongo_db_client.get_messages(line_id)  # 会話履歴の取得
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+    def _message(self):
+        messages = self.mongo_db_client.get_messages(self.line_id)  # 会話履歴の取得
+        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
         
         if len(messages) <= 1:  # exitからの再開の場合
             messages = [
@@ -89,19 +108,20 @@ class line_flow:
                 }
             ]
         else:
-            if message =="resume":
-                self.resume(line_id, reply_token)
+            if self.message == "resume":
+                self._resume()
                 return
-            content_dict = {"role": "user", "content": message}
-            messages.append(content_dict)
+            message_dict = {"role": "user", "content": self.message}
+            messages.append(message_dict)
 
         response_text = self.gpt_client.get_response(messages)
         progress = 7
         self.line_client.reply_gpt_response(
-            reply_token=reply_token,
+            reply_token=self.reply_token,
             session_id=session_id,
             message=response_text,
             progress=progress,
             progress_max=self.progress_max,
         )
+        self._update_history(messages[-1], response_text, self.line_id)
         return
