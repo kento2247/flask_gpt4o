@@ -101,8 +101,8 @@ class line:
             headers=self.headers,
             json=response_json,
         )
-        if response.status_code != 200:
-            raise Exception(response.text)
+        # if response.status_code != 200:
+        #     raise Exception(response.text)
 
     def reply_interview_end(self, reply_token: str):
         json_path = self.config["line"]["template_path"]["interview_end"]

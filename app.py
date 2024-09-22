@@ -4,6 +4,7 @@ import os
 import yaml
 from dotenv import load_dotenv
 from flask import Flask, request
+
 from src.message_flow import message_flow
 
 app = Flask(__name__)
@@ -17,7 +18,7 @@ def callback():
         message_flow_client.message_parser(request.json)
     except Exception as e:
         error_message = f"Error: {e}"
-        message_flow.error_send(error_message)
+        message_flow_client.error_send(error_message)
     return "OK"
 
 
@@ -36,7 +37,8 @@ def friend_list():
     print(friend_list)
     return {"friend_list": friend_list}
 
-def parser()->argparse.Namespace:
+
+def parser() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
@@ -51,13 +53,14 @@ def parser()->argparse.Namespace:
     args = parser.parse_args()
     return args
 
+
 if __name__ == "__main__":
     config = yaml.safe_load(open("config.yaml"))
     args = parser()
     args.config = config
     if args.load_env:
         load_dotenv()
-        
+
     # mongodb, line, gptの初期化
     message_flow_client = message_flow(args)
 

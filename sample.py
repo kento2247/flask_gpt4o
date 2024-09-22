@@ -72,7 +72,7 @@ send_data = {
                 "id": "444573844083572737",
                 "type": "text",
                 "quoteToken": "q3Plxr4AgKd...",
-                "text": "@All @example Good Morning!! (love)",
+                "text": "プログラミングをしています",
                 "emojis": [
                     {
                         "index": 29,
