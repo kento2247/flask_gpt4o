@@ -1,13 +1,22 @@
 # flask_gpt4o
 
 ## setup
+1. clone repository
+   ```sh
+   git clone --recurse-submodules git@github.com:kento2247/flask_gpt4o.git
+   cd flask_gpt4o
+   ```
+   - if you forgot to clone with `--recurse-submodules`
+     ```sh
+     git submodule update --init --recursive
+     ```
 
-1. install dependencies
-   ```bash
+2. install dependencies
+   ```sh
    pip install -r requirements.txt
    ```
-2. add .env file
-   ```bash
+3. add .env file
+   ```sh
    OPENAI_API_KEY=YOUR_API_KEY
    LINE_CHANNEL_ACCESS_TOKEN=YOUR_ACCESS_TOKEN
    GEMINI_API_KEY=YOUR_API_KEY
