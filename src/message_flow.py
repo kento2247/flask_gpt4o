@@ -27,7 +27,7 @@ class message_flow:
         self.line_client = line(channel_access_token)
 
         # gpt接続設定
-        gpt_model = self.config["gpt"]["model"]
+        gpt_model = self.config["openai"]["model"]
         openai_api_key = os.getenv("OPENAI_API_KEY")
         self.gpt_client = gpt(
             model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api

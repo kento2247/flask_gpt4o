@@ -1,8 +1,5 @@
 import argparse
-import os
 
-import yaml
-from dotenv import load_dotenv
 from flask import Flask, request
 
 from src.message_flow import message_flow
@@ -39,6 +36,11 @@ def friend_list():
 
 
 def parser() -> argparse.Namespace:
+    import os
+
+    import yaml
+    from dotenv import load_dotenv
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
@@ -50,20 +52,32 @@ def parser() -> argparse.Namespace:
         action="store_true",
         help="Sleep OpenAI API",
     )
+    parser.add_argument(
+        "--config_path",
+        type=str,
+        default="config.yaml",
+        help="Path to config file",
+    )
     args = parser.parse_args()
+
+    if args.load_env:
+        load_dotenv()
+
+    args.openai_api_key = os.getenv("OPENAI_API_KEY")
+    args.mongodb_username = os.getenv("MONGODB_USERNAME")
+    args.mongodb_password = os.getenv("MONGODB_PASSWORD")
+    args.line_channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+
+    args.config = yaml.safe_load(open(args.config_path))
     return args
 
 
 if __name__ == "__main__":
-    config = yaml.safe_load(open("config.yaml"))
     args = parser()
-    args.config = config
-    if args.load_env:
-        load_dotenv()
 
     # mongodb, line, gptの初期化
     message_flow_client = message_flow(args)
 
     # サーバーの起動
-    server_port = config["server"]["port"]
+    server_port = args.config["server"]["port"]
     app.run(host="0.0.0.0", port=server_port)
