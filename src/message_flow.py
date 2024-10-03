@@ -112,10 +112,8 @@ class message_flow:
             self._resume()
             return
 
-        messages.append({"role": "user", "content": self.message})
-
         response_text, progress = self._generate_question(
-            self.message, messages, self.message
+            session_id, messages, self.message
         )
         self.line_client.reply_gpt_response(
             reply_token=self.reply_token,
@@ -125,7 +123,7 @@ class message_flow:
             progress_max=self.progress_max,
         )
 
-        self._update_history(messages[-1], response_text)
+        self._update_history(self.message, response_text)
         return
 
     def _generate_question(self, session_id, message, messages):
