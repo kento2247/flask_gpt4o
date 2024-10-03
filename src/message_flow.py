@@ -108,7 +108,7 @@ class message_flow:
         messages = self.mongo_db_client.get_messages(self.line_id)  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[self.line_id]
 
-        if self.message == "resume":
+        if self.message == "resume" and len(messages) > 1:
             self._resume()
             return
 
