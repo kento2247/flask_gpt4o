@@ -133,7 +133,7 @@ class message_flow:
         # TODO ここに，チャピの回答を取得する処理を書く
 
         if len(messages) <= 0:
-            assistant_response = "本日はあなたの意思決定を伴う作業やお仕事について、お尋ねしたいです。貴重なお時間をいただき、ありがとうございます！早速ですが、最近の日常的なタスクを教えていただけますか？"  # TODO ちゃぴに作らせる
+            assistant_response = "今、どんな作業をしていますか？"# TODO ちゃぴに作らせる
             progress = 0
 
         else:
