@@ -82,7 +82,7 @@ class message_flow:
         self.mongo_db_client.initialize_messages(
             self.line_id
         )  # 既存のセッションがあれば終了させ，新しいセッションを作成
-        self._update_history(messages[0], response_text)
+        self._update_history([], response_text)
         return
 
     def _exit(self):
