@@ -14,13 +14,13 @@ class message_flow:
         # mongodb接続設定
         mongodb_username = os.getenv("MONGODB_USERNAME")
         mongodb_password = os.getenv("MONGODB_PASSWORD")
-        mongodb_app_name = self.config["mongodb"]["app_name"]
-        mongodb_db_name = self.config["mongodb"]["db_name"]
+        mongodb_database_name = self.config["mongodb"]["database_name"]
+        mongodb_collection_name = self.config["mongodb"]["collection_name"]
         self.mongo_db_client = mongodb(
             username=mongodb_username,
             password=mongodb_password,
-            app_name=mongodb_app_name,
-            db_name=mongodb_db_name,
+            database_name=mongodb_database_name,
+            collection_name=mongodb_collection_name,
         )
         self.interview_agents = InterviewAgents(args)
 

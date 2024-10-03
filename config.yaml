@@ -4,8 +4,8 @@ openai:
   temperature: 0.5
   early_stopping: False
 mongodb:
-  app_name: gpt4otest
-  db_name: messages
+  database_name: gpt4otest
+  collection_name: messages
 server:
   port: 3011
 flow:

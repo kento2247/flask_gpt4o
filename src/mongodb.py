@@ -5,12 +5,14 @@ from pymongo.mongo_client import MongoClient
 
 
 class mongodb:
-    def __init__(self, app_name: str, db_name: str, username: str, password: str):
+    def __init__(
+        self, database_name: str, collection_name: str, username: str, password: str
+    ):
         self.MONGO_USERNAME = username
         self.MONGO_PASSWORD = password
-        self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@{app_name}.aartxch.mongodb.net/?retryWrites=true&w=majority&appName={app_name}"
+        self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@{database_name}.aartxch.mongodb.net/?retryWrites=true&w=majority&appName={database_name}"
         self.client = MongoClient(self.MONGO_URI)
-        self.db = self.client[app_name][db_name]
+        self.db = self.client[database_name][collection_name]
         self.sessionid_dict = {}
         self.config = yaml.safe_load(open("config.yaml"))
 
@@ -85,13 +87,13 @@ if __name__ == "__main__":
     # mongodb接続設定
     mongodb_username = os.getenv("MONGODB_USERNAME")
     mongodb_password = os.getenv("MONGODB_PASSWORD")
-    mongodb_app_name = config["mongodb"]["app_name"]
-    mongodb_db_name = config["mongodb"]["db_name"]
+    mongodb_database_name = config["mongodb"]["database_name"]
+    mongodb_collection_name = config["mongodb"]["collection_name"]
     mongo_db_client = mongodb(
         username=mongodb_username,
         password=mongodb_password,
-        app_name=mongodb_app_name,
-        db_name=mongodb_db_name,
+        database_name=mongodb_database_name,
+        collection_name=mongodb_collection_name,
     )
 
     all_messages = mongo_db_client.all_messages()
