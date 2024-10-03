@@ -50,6 +50,12 @@ def parser() -> argparse.Namespace:
         action="store_true",
         help="Sleep OpenAI API",
     )
+    parser.add_argument(
+        "--early_stopping",
+        action="store_true",
+        help="Early stopping",
+        default=True,
+    )
     args = parser.parse_args()
     return args
 

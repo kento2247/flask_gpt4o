@@ -3,6 +3,7 @@ import os
 from src.gpt import gpt
 from src.line import line
 from src.mongodb import mongodb
+from src.interview_flow import InterviewAgents
 
 
 class message_flow:
@@ -105,6 +106,7 @@ class message_flow:
         return
 
     def _message(self):
+        # TODO
         messages = self.mongo_db_client.get_messages(self.line_id)  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[self.line_id]
 

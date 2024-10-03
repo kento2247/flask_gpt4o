@@ -76,3 +76,29 @@ class mongodb:
         session_id = self.sessionid_dict[line_id]
         self.db.delete_many({"session_id": session_id})
         return None
+
+    def all_messages(self) -> list:
+        return list(self.db.find())
+
+
+if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+
+    config = yaml.safe_load(open("config.yaml"))
+    load_dotenv()
+
+    # mongodb接続設定
+    mongodb_username = os.getenv("MONGODB_USERNAME")
+    mongodb_password = os.getenv("MONGODB_PASSWORD")
+    mongodb_app_name = config["mongodb"]["app_name"]
+    mongodb_db_name = config["mongodb"]["db_name"]
+    mongo_db_client = mongodb(
+        username=mongodb_username,
+        password=mongodb_password,
+        app_name=mongodb_app_name,
+        db_name=mongodb_db_name,
+    )
+
+    all_messages = mongo_db_client.all_messages()
+
