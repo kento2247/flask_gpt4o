@@ -81,7 +81,7 @@ class InterviewAgents:
             return False
 
         # 各側面が2つ以上埋まっているかどうかを確認
-        sufficient_elements = all(len(v) >= 2 for v in elements.values())
+        sufficient_elements = all(len(v) >= 1 for v in elements.values())
 
         if sufficient_elements:
             # すべての側面が2つ以上埋まっている場合、次はGPTでの確認
@@ -158,7 +158,7 @@ class InterviewAgents:
         4. フレーミング効果を使うこと。例":"この状況でどうしてもうまくいかないと感じることがありますか？\n
         5. 極力最小限の長さにすること。\n
         """
-        prompt = f"次の質問を改善してください。簡単な相槌と、一つの質問のみを生成してください。：\n{question}"
+        prompt = f"次の質問を改善してください。簡単な相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。：\n{question}"
 
         return self._get_gpt_response(system_message, prompt)
 
