@@ -1,5 +1,7 @@
-gpt:
+openai:
   model: gpt-4o
+  max_tokens: 100
+  temperature: 0.5
 mongodb:
   app_name: gpt4otest
   db_name: messages
