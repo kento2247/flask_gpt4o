@@ -55,11 +55,14 @@ class message_flow:
         self.line_client.reply(self.reply_token, error_message)
         return
 
-    def _update_history(self, message_dict: dict, assistant_message: str):
-        content_list = [  # 二つのメッセージを同時に保存(user or system, assistant)
-            message_dict,
-            {"role": "assistant", "content": assistant_message},
-        ]
+    def _update_history(self, message: str, assistant_message: str):
+        if message and message != "resume":
+            content_list = [
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": assistant_message},
+            ]
+        else:
+            content_list = [{"role": "assistant", "content": assistant_message}]
         self.mongo_db_client.insert_message(
             self.line_id, content_list
         )  # 会話履歴の更新
@@ -138,8 +141,8 @@ class message_flow:
             elements = self.interview_agents.extract_elements(
                 message, messages
             )  # インタビュー状況を把握
-            print(elements)
-            print(messages)
+            # print(elements)
+            # print(messages)
             # インタビューを終了すべきかチェック
             if self.interview_agents.check_if_interview_should_end(messages, elements):
                 assistant_response = (
