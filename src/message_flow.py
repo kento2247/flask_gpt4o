@@ -31,9 +31,9 @@ class message_flow:
         # gpt接続設定
         gpt_model = self.config["openai"]["model"]
         openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.gpt_client = gpt(
-            model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
-        )
+        # self.gpt_client = gpt(
+        #     model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
+        # )
 
     def message_parser(self, request_json):
         parse_data = self.line_client.parse_webhook(request_json)
@@ -67,13 +67,11 @@ class message_flow:
 
     def _follow(self):
         session_id = self.mongo_db_client.sessionid_dict[self.line_id]
-        messages = [
-            {
-                "role": "system",
-                "content": self.config["initial_message"],
-            }
-        ]
-        response_text = self.gpt_client.get_response(messages)
+        response_text = self._generate_question(
+            session_id,
+            "",
+            [],
+        )
         self.line_client.reply_gpt_response(
             reply_token=self.reply_token,
             session_id=session_id,
@@ -113,6 +111,7 @@ class message_flow:
         if self.message == "resume":
             self._resume()
             return
+
         messages.append({"role": "user", "content": self.message})
 
         response_text, progress = self._generate_question(
