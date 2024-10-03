@@ -113,7 +113,7 @@ class message_flow:
             return
 
         response_text, progress = self._generate_question(
-            session_id, messages, self.message
+            session_id, self.message, messages
         )
         self.line_client.reply_gpt_response(
             reply_token=self.reply_token,
