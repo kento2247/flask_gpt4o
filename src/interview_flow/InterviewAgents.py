@@ -11,10 +11,10 @@ class InterviewAgents:
         assert args.openai_api_key, "OpenAI APIキーが設定されていません"
 
         openai.api_key = args.openai_api_key
-        self.model = args.model
-        self.max_tokens = args.max_tokens
-        self.temperature = args.temperature
-        self.early_stopping = args.early_stopping
+        self.model = args.config["openai"]["model"]
+        self.max_tokens = args.config["openai"]["max_tokens"]
+        self.temperature = args.config["openai"]["temperature"]
+        self.early_stopping = args.config["openai"]["early_stopping"]
 
     def _get_gpt_response(self, sys_message: str, usr_message: str) -> str:
         req_messages = [
@@ -106,13 +106,12 @@ class InterviewAgents:
             インタビューは終了すべきですか？現在のタスクに関する「行動」「認知」「情報」の各側面を具体的に
             引き出しているか、メッセージ履歴と引き出された各側面をもとに判断してください。
             """
-            
+
             # GPTに最終確認を依頼し、終了かどうかを判断
             return "終了" in self._get_gpt_response(system_message, prompt)
 
         # もし各要素が十分に埋まっていなければ終了しない
         return False
-
 
     def extract_elements(self, message, messages):
         system_message = """

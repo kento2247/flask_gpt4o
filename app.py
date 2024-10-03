@@ -53,12 +53,6 @@ def parser() -> argparse.Namespace:
         help="Sleep OpenAI API",
     )
     parser.add_argument(
-        "--early_stopping",
-        action="store_true",
-        help="Early stopping",
-        default=True,
-    )
-    parser.add_argument(
         "--config_path",
         type=str,
         default="config.yaml",

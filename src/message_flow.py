@@ -1,9 +1,9 @@
 import os
 
-from src.gpt import gpt
+# from src.gpt import gpt
 from src.line import line
 from src.mongodb import mongodb
-from src.interview_flow import InterviewAgents
+from src.interview_flow.InterviewAgents import InterviewAgents
 
 
 class message_flow:
@@ -22,6 +22,7 @@ class message_flow:
             app_name=mongodb_app_name,
             db_name=mongodb_db_name,
         )
+        self.interview_agents = InterviewAgents(args)
 
         # line接続設定
         channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
@@ -106,25 +107,17 @@ class message_flow:
         return
 
     def _message(self):
-        # TODO
         messages = self.mongo_db_client.get_messages(self.line_id)  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[self.line_id]
 
-        if len(messages) <= 1:  # exitからの再開の場合
-            messages = [
-                {
-                    "role": "system",
-                    "content": self.config["initial_message"],
-                }
-            ]
-        else:
-            if self.message == "resume":
-                self._resume()
-                return
-            messages.append({"role": "user", "content": self.message})
+        if self.message == "resume":
+            self._resume()
+            return
+        messages.append({"role": "user", "content": self.message})
 
-        response_text = self.gpt_client.get_response(messages)
-        progress = 7
+        response_text, progress = self._generate_question(
+            self.message, messages, self.message
+        )
         self.line_client.reply_gpt_response(
             reply_token=self.reply_token,
             session_id=session_id,
@@ -135,3 +128,38 @@ class message_flow:
 
         self._update_history(messages[-1], response_text)
         return
+
+    def _generate_question(self, session_id, message, messages):
+        # TODO ここに，チャピの回答を取得する処理を書く
+
+        if len(messages) <= 1:
+            assistant_response = "本日はあなたの意思決定を伴う作業やお仕事について、お尋ねしたいです。貴重なお時間をいただき、ありがとうございます！早速ですが、最近の日常的なタスクを教えていただけますか？"  # TODO ちゃぴに作らせる
+            progress = 0
+
+        else:
+            # 通常の質問生成と進捗管理の処理
+            elements = self.interview_agents.extract_elements(
+                message, messages
+            )  # インタビュー状況を把握
+            print(elements)
+            print(messages)
+            # インタビューを終了すべきかチェック
+            if self.interview_agents.check_if_interview_should_end(messages, elements):
+                assistant_response = (
+                    "本日はインタビューのお時間をいただきありがとうございました"
+                )
+                progress = 5  # インタビュー終了時の進捗
+            else:
+                question = self.interview_agents.generate_question(
+                    message, elements, messages
+                )  # 質問を生成
+                improved_question = self.interview_agents.improve_question(
+                    question
+                )  # 質問を改善
+                checked_question = self.interview_agents.check_question(
+                    improved_question, message, messages, elements, attempts=0
+                )  # 質問が適切かどうかをチェック. attemptsの初期値は0
+                assistant_response = checked_question
+                progress = 5  # インタビュー進捗
+
+        return assistant_response, progress

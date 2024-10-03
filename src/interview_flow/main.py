@@ -43,10 +43,12 @@ from dotenv import load_dotenv
 load_dotenv()
 args = argparse.Namespace()
 args.openai_api_key = os.environ["OPENAI_API_KEY"]
-args.model = "gpt-4o"
-args.max_tokens = 100
-args.temperature = 0.5
-args.early_stopping = True
+args.config = {
+    "model": "gpt-4o",
+    "max_tokens": 100,
+    "temperature": 0.5,
+    "early_stopping": False,
+}
 
 
 messages_save_path = "/home/mana/flask_gpt4o/tmp/messages.json"
