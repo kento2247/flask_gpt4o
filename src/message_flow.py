@@ -132,7 +132,7 @@ class message_flow:
     def _generate_question(self, session_id, message, messages):
         # TODO ここに，チャピの回答を取得する処理を書く
 
-        if len(messages) <= 1:
+        if len(messages) <= 0:
             assistant_response = "本日はあなたの意思決定を伴う作業やお仕事について、お尋ねしたいです。貴重なお時間をいただき、ありがとうございます！早速ですが、最近の日常的なタスクを教えていただけますか？"  # TODO ちゃぴに作らせる
             progress = 0
 
