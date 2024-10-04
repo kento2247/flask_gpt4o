@@ -160,6 +160,7 @@ class InterviewAgents:
         """
         prompt = f"次の質問を改善してください。簡単な相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。：\n{question}"
 
+
         return self._get_gpt_response(system_message, prompt)
 
     def check_question(
