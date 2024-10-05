@@ -1,8 +1,8 @@
 def generate_question(session_id, message, messages):
     # TODO ここに，チャピの回答を取得する処理を書く
 
-    if message == "" and len(messages) == 0:
-        assistant_response = "本日はあなたの意思決定を伴う作業やお仕事について、お尋ねしたいです。貴重なお時間をいただき、ありがとうございます！早速ですが、最近の日常的なタスクを教えていただけますか？"  # TODO ちゃぴに作らせる
+    if len(messages) <= 0:
+        assistant_response = "現在、どんな作業をしていますか？"  # TODO ちゃぴに作らせる
         progress = 0
 
     else:
@@ -10,8 +10,8 @@ def generate_question(session_id, message, messages):
         elements = interview_agents.extract_elements(
             message, messages
         )  # インタビュー状況を把握
-        print(elements)
-        print(messages)
+        # print(elements)
+        # print(messages)
         # インタビューを終了すべきかチェック
         if interview_agents.check_if_interview_should_end(messages, elements):
             assistant_response = (
@@ -44,16 +44,18 @@ load_dotenv()
 args = argparse.Namespace()
 args.openai_api_key = os.environ["OPENAI_API_KEY"]
 args.config = {
-    "model": "gpt-4o",
-    "max_tokens": 100,
-    "temperature": 0.5,
-    "early_stopping": False,
+    "openai": {
+        "model": "gpt-4o",
+        "max_tokens": 100,
+        "temperature": 0.5,
+        "early_stopping": True,
+    }
 }
 
 
-messages_save_path = "/home/mana/flask_gpt4o/tmp/messages.json"
+messages_save_path = "/home/mana/tmp/messages.json"
 
-from interview_flow.InterviewAgents import InterviewAgents
+from InterviewAgents import InterviewAgents
 
 interview_agents = InterviewAgents(args)
 

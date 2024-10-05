@@ -56,7 +56,7 @@ class InterviewAgents:
         時間的圧力":"この意思決定にはどの程度の時間的圧力がかかっていたか？\n
         
         質問生成における制約は、以下の通りです。\n
-        1. 質問は一回につき最大一個にしてください。簡単な相槌はうってください。\n
+        1. 質問は一回につき最大一個にしてください。相槌はうってください。\n
         2. 重複した質問を避けてください・\n
         3. 回答者の現在のタスクに関する質問のみを生成してください\n
         4. CDMのプローブはそのまま使わず、文脈に合わせて単語や言い回しを変えてください。\n
@@ -81,7 +81,7 @@ class InterviewAgents:
             return False
 
         # 各側面が2つ以上埋まっているかどうかを確認
-        sufficient_elements = all(len(v) >= 1 for v in elements.values())
+        sufficient_elements = all(len(v) >= 2 for v in elements.values())
 
         if sufficient_elements:
             # すべての側面が2つ以上埋まっている場合、次はGPTでの確認
@@ -132,13 +132,14 @@ class InterviewAgents:
         updated_category = self._get_gpt_response(system_message, prompt).strip()
 
         self._add_to_details(updated_category, message)
-
         elements = {
             "行動": self.details["行動"],
             "認知": self.details["認知"],
             "情報": self.details["情報"],
         }
+        print(elements)
         return elements
+    
 
     def _add_to_details(self, category, message):
         if category in self.details:
@@ -158,7 +159,7 @@ class InterviewAgents:
         4. フレーミング効果を使うこと。例":"この状況でどうしてもうまくいかないと感じることがありますか？\n
         5. 極力最小限の長さにすること。\n
         """
-        prompt = f"次の質問を改善してください。簡単な相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。：\n{question}"
+        prompt = f"次の質問を改善してください。相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。：\n{question}"
 
 
         return self._get_gpt_response(system_message, prompt)
