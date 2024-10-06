@@ -2,7 +2,7 @@ openai:
   model: gpt-4o
   max_tokens: 100
   temperature: 0.5
-  early_stopping: False
+  early_stopping: True
 mongodb:
   database_name: gpt4otest
   collection_name: messages
