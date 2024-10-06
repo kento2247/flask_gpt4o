@@ -9,25 +9,22 @@ args = None
 message_flow_client = None
 
 
-@app.route("/", methods=["GET"])
-def index():
-    # redirect to friend_list
-    return friend_list()
-
-
 @app.route("/callback", methods=["POST"])
 def callback():
+    print("callback")
     message_flow_client.message_parser(request.json)
     return "OK"
 
 
 @app.route("/keep_alive", methods=["GET"])
 def keep_alive():
+    print("keep_alive")
     return "OK"
 
 
 @app.route("/friend_list", methods=["get"])
 def friend_list():
+    print("friend_list")
     line_ids = message_flow_client.mongo_db_client.sessionid_dict.keys()
     friend_list = []
     for line_id in line_ids:
@@ -38,6 +35,7 @@ def friend_list():
 
 @app.route("/interview_history", methods=["get"])
 def interview_history():
+    print("interview_history")
     line_id = request.args.get("userId")
     interview_history = message_flow_client.mongo_db_client.get_messages(line_id)
     return render_template(
