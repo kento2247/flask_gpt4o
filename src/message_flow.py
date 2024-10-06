@@ -58,12 +58,12 @@ class message_flow:
             }
 
         if event_type == "follow":
-            self._follow()
+            self._follow(line_id)
         elif event_type == "message":
             if message == "exit":
-                self._exit()
+                self._exit(line_id)
             else:
-                self._message()  # messageの中でresumeがあるか判定
+                self._message(line_id)  # messageの中でresumeがあるか判定
 
     def error_send(self, error_message: str):
         # self.line_client.reply(self.reply_token, error_message)
