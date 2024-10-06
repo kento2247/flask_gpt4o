@@ -10,6 +10,8 @@ server:
   port: 3011
 flow:
   progress_max: 12
+  follow_message: 現在、どんな作業をしていますか？
+  initial_question: 現在、どんな作業をしていますか？
 line:
   template_path:
     gpt_response: template/gpt_response.json

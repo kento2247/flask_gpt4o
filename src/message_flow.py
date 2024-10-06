@@ -12,6 +12,8 @@ class message_flow:
         self.args = args
         self.config = args.config
         self.progress_max = self.config["flow"]["progress_max"]
+        self.initial_question = self.config["flow"]["initial_question"]
+        self.follow_message = self.config["flow"]["follow_message"]
 
         # mongodb接続設定
         mongodb_username = os.getenv("MONGODB_USERNAME")
@@ -53,18 +55,24 @@ class message_flow:
             return None
 
         else:
-            self.processing_dict[line_id] = {
-                "reply_token": reply_token,
-                "message": message,
-            }
+            try:
+                self.processing_dict[line_id] = {
+                    "reply_token": reply_token,
+                    "message": message,
+                }
 
-            if event_type == "follow":
-                self._follow(line_id)
-            elif event_type == "message":
-                if message == "exit":
-                    self._exit(line_id)
-                else:
-                    self._message(line_id)  # messageの中でresumeがあるか判定
+                if event_type == "follow":
+                    self._follow(line_id)
+                elif event_type == "message":
+                    if message == "exit":
+                        self._exit(line_id)
+                    else:
+                        self._message(line_id)  # messageの中でresumeがあるか判定
+
+            except Exception as e:
+                error_message = f"Error: {e}"
+                print(error_message)
+                self.error_send(error_message)
 
             del self.processing_dict[line_id]
             return
@@ -88,11 +96,7 @@ class message_flow:
         print("follow")
         reply_token = self.processing_dict[line_id]["reply_token"]
         session_id = self.mongo_db_client.sessionid_dict[line_id]
-        response_text = self._generate_question(
-            session_id,
-            "",
-            [],
-        )
+        response_text = self.follow_message
         self.line_client.reply_gpt_response(
             reply_token=reply_token,
             session_id=session_id,
@@ -161,9 +165,7 @@ class message_flow:
         # TODO ここに，チャピの回答を取得する処理を書く
 
         if len(messages) <= 0:
-            assistant_response = (
-                "現在、どんな作業をしていますか？"  # TODO ちゃぴに作らせる
-            )
+            assistant_response = self.initial_question
             progress = 0
 
         else:

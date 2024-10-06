@@ -11,12 +11,7 @@ message_flow_client = None
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    try:
-        message_flow_client.message_parser(request.json)
-    except Exception as e:
-        error_message = f"Error: {e}"
-        print(error_message)
-        message_flow_client.error_send(error_message)
+    message_flow_client.message_parser(request.json)
     return "OK"
 
 

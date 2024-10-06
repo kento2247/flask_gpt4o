@@ -180,3 +180,12 @@ class line:
         )
         if response.status_code != 200:
             raise Exception(response.text)
+
+    def broadcast_flex_message(self, message_json: dict):
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/broadcast",
+            headers=self.headers,
+            json=message_json,
+        )
+        if response.status_code != 200:
+            raise Exception(response.text)
