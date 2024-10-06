@@ -38,7 +38,7 @@ class message_flow:
         # # )
 
         # 処理中のline_idの保持. {line_id: {reply_token: reply_token, message: message}}
-        self.processing_list = {}
+        self.processing_dict = {}
 
     def message_parser(self, request_json):
         parse_data = self.line_client.parse_webhook(request_json)
@@ -48,25 +48,26 @@ class message_flow:
         reply_token = parse_data["reply_token"]
         message = parse_data["message"]
 
-        if line_id in self.processing_list:
+        if line_id in self.processing_dict:
+            print("line_id is already in processing_dict")
             return None
 
         else:
-            self.processing_list[line_id] = {
+            self.processing_dict[line_id] = {
                 "reply_token": reply_token,
                 "message": message,
             }
 
-        if event_type == "follow":
-            self._follow(line_id)
-        elif event_type == "message":
-            if message == "exit":
-                self._exit(line_id)
-            else:
-                self._message(line_id)  # messageの中でresumeがあるか判定
+            if event_type == "follow":
+                self._follow(line_id)
+            elif event_type == "message":
+                if message == "exit":
+                    self._exit(line_id)
+                else:
+                    self._message(line_id)  # messageの中でresumeがあるか判定
 
-        del self.processing_list[line_id]
-        return
+            del self.processing_dict[line_id]
+            return
 
     def error_send(self, error_message: str):
         # self.line_client.reply(self.reply_token, error_message)
@@ -88,7 +89,8 @@ class message_flow:
         return
 
     def _follow(self, line_id: str):
-        reply_token = self.processing_list[line_id]["reply_token"]
+        print("follow")
+        reply_token = self.processing_dict[line_id]["reply_token"]
         session_id = self.mongo_db_client.sessionid_dict[line_id]
         response_text = self._generate_question(
             session_id,
@@ -109,15 +111,17 @@ class message_flow:
         return
 
     def _exit(self, line_id: str):
-        reply_token = self.processing_list[line_id]["reply_token"]
+        print("exit")
+        reply_token = self.processing_dict[line_id]["reply_token"]
         self.line_client.reply_interview_end(reply_token)
         self.mongo_db_client.initialize_messages(line_id)
         return
 
     def _resume(self, line_id: str):
+        print("resume")
         messages = self.mongo_db_client.get_messages(line_id)
         session_id = self.mongo_db_client.sessionid_dict[line_id]
-        reply_token = self.processing_list[line_id]["reply_token"]
+        reply_token = self.processing_dict[line_id]["reply_token"]
 
         progress = 7
         reply_message = messages[-1]["content"]  # 最後のメッセージを取得
@@ -133,8 +137,8 @@ class message_flow:
     def _message(self, line_id: str):
         messages = self.mongo_db_client.get_messages(line_id)  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[line_id]
-        message = self.processing_list[line_id]["message"]
-        reply_token = self.processing_list[line_id]["reply_token"]
+        message = self.processing_dict[line_id]["message"]
+        reply_token = self.processing_dict[line_id]["reply_token"]
 
         if message == "resume" and len(messages) > 1:
             self._resume(line_id)
