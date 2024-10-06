@@ -65,6 +65,9 @@ class message_flow:
             else:
                 self._message(line_id)  # messageの中でresumeがあるか判定
 
+        del self.processing_list[line_id]
+        return
+
     def error_send(self, error_message: str):
         # self.line_client.reply(self.reply_token, error_message)
         developper_line_id = self.config["line"]["developper_line_id"]
