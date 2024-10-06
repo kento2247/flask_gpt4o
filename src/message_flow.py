@@ -11,6 +11,7 @@ class message_flow:
         self.args = args
         self.config = args.config
         self.progress_max = self.config["flow"]["progress_max"]
+
         # mongodb接続設定
         mongodb_username = os.getenv("MONGODB_USERNAME")
         mongodb_password = os.getenv("MONGODB_PASSWORD")
@@ -28,12 +29,15 @@ class message_flow:
         channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
         self.line_client = line(channel_access_token)
 
-        # gpt接続設定
-        gpt_model = self.config["openai"]["model"]
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        # self.gpt_client = gpt(
-        #     model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
-        # )
+        # # gpt接続設定
+        # gpt_model = self.config["openai"]["model"]
+        # openai_api_key = os.getenv("OPENAI_API_KEY")
+        # # self.gpt_client = gpt(
+        # #     model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
+        # # )
+
+        # 処理中のline_idの保持
+        self.processingline_id = []
 
     def message_parser(self, request_json):
         parse_data = self.line_client.parse_webhook(request_json)
@@ -42,6 +46,8 @@ class message_flow:
         self.line_id = parse_data["line_id"]
         self.reply_token = parse_data["reply_token"]
         self.message = parse_data["message"]
+
+        
 
         if self.event_type == "follow":
             self._follow()
@@ -52,7 +58,9 @@ class message_flow:
                 self._message()  # messageの中でresumeがあるか判定
 
     def error_send(self, error_message: str):
-        self.line_client.reply(self.reply_token, error_message)
+        # self.line_client.reply(self.reply_token, error_message)
+        developper_line_id = self.config["line"]["developper_line_id"]
+        self.line_client.push_message(developper_line_id, error_message)
         return
 
     def _update_history(self, message: str, assistant_message: str):
@@ -133,7 +141,9 @@ class message_flow:
         # TODO ここに，チャピの回答を取得する処理を書く
 
         if len(messages) <= 0:
-            assistant_response = "現在、どんな作業をしていますか？"# TODO ちゃぴに作らせる
+            assistant_response = (
+                "現在、どんな作業をしていますか？"  # TODO ちゃぴに作らせる
+            )
             progress = 0
 
         else:

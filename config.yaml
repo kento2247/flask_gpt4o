@@ -14,6 +14,7 @@ line:
   template_path:
     gpt_response: template/gpt_response.json
     interview_end: template/interview_end.json
+  developper_line_id: U4db8598c517126f763da9e261203650a
 # initial_message:
 #   あなたはプラントの現場を取材するプロのインタビュアーです．以下の内容に基づいて、従業員に対してインタビューを行ってください。\n
 #   インタビューは、認知タスク分析を行うためのものです。つまり、リアルタイムで従業員が取り組んでいるタスクにおける、認知プロセスを理解するためのデータをインタビューで集めることが目的です。\n

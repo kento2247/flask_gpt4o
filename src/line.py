@@ -52,6 +52,19 @@ class line:
         if response.status_code != 200:
             raise Exception(response.text)
 
+    def push_message(self, line_id: str, message: str):
+        response_json = {
+            "to": line_id,
+            "messages": [{"type": "text", "text": message}],
+        }
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/push",
+            headers=self.headers,
+            json=response_json,
+        )
+        if response.status_code != 200:
+            raise Exception(response.text)
+
     def get_profile(self, user_id: str) -> dict:
         response = requests.get(
             f"https://api.line.me/v2/bot/profile/{user_id}",
