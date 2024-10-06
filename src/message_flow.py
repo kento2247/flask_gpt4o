@@ -76,13 +76,11 @@ class message_flow:
         return
 
     def _update_history(self, line_id: str, message: str, assistant_message: str):
+        content_list = []
         if message and message != "resume":
-            content_list = [
-                {"role": "user", "content": message},
-                {"role": "assistant", "content": assistant_message},
-            ]
-        else:
-            content_list = [{"role": "assistant", "content": assistant_message}]
+            content_list.append({"role": "user", "content": message})
+        if assistant_message:
+            content_list.append({"role": "assistant", "content": assistant_message})
         self.mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
         return
 
@@ -143,15 +141,20 @@ class message_flow:
             return
 
         response_text, progress = self._generate_question(session_id, message, messages)
-        self.line_client.reply_gpt_response(
-            reply_token=reply_token,
-            session_id=session_id,
-            message=response_text,
-            progress=progress,
-            progress_max=self.progress_max,
-        )
 
-        self._update_history(line_id, message, response_text)
+        if progress == self.progress_max:
+            self._update_history(line_id, message)
+            self._exit(line_id)
+        else:
+            self.line_client.reply_gpt_response(
+                reply_token=reply_token,
+                session_id=session_id,
+                message=response_text,
+                progress=progress,
+                progress_max=self.progress_max,
+            )
+            self._update_history(line_id, message, response_text)
+
         return
 
     def _generate_question(self, session_id, message, messages):
@@ -175,7 +178,8 @@ class message_flow:
                 assistant_response = (
                     "本日はインタビューのお時間をいただきありがとうございました"
                 )
-                progress = 5  # インタビュー終了時の進捗
+
+                progress = self.progress_max  # インタビュー終了時の進捗
             else:
                 question = self.interview_agents.generate_question(
                     message, elements, messages
