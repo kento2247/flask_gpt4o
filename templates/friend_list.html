@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Friend List</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            {% for friend in friend_list %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        {# keys = ["userId", "displayName", "pictureUrl", "statusMessage", "language"] #}
+                        <h5 class="card-title">{{ friend["displayName"] }}</h5>
+                        <p class="card-text" style="font-size: small;">{{ friend["statusMessage"] }}</p>
+                        <img src="{{ friend["pictureUrl"] }}" class="card-img-top" alt="...">
+                        <p class="card-text">使用言語: {{ friend["language"] }}</p>
+                        <a href="/interview_history?userId={{ friend["userId"] }}" class="btn btn-primary">インタビュー履歴</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インタビュー履歴</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">インタビュー履歴</h1>
+        <div class="accordion" id="interviewAccordion">
+            {% for session in interview_history %}
+            <div class="card">
+                <div class="card-header" id="heading{{ loop.index }}" style="background-color: {% if session.end %}gray{% endif %};">
+                    <h2 class="mb-0">
+                        <input type="checkbox" {% if session.end %}checked{% endif %} disabled>
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
+                            {{ session.session_id }}
+                        </button>
+                    </h2>
+                </div>
+                <div id="collapse{{ loop.index }}" class="collapse" aria-labelledby="heading{{ loop.index }}" data-parent="#interviewAccordion">
+                    <div class="card-body" style="background-color: {% if session.end %}gray{% endif %};">
+                        {% for message in session.data %}
+                        <p class="card-text"><strong>{{ message.role }}:</strong> {{ message.content }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

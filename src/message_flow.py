@@ -119,7 +119,7 @@ class message_flow:
 
     def _resume(self, line_id: str):
         print("resume")
-        messages = self.mongo_db_client.get_messages(line_id)
+        messages = self.mongo_db_client.get_one_messages(line_id)
         session_id = self.mongo_db_client.sessionid_dict[line_id]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -135,7 +135,7 @@ class message_flow:
         return
 
     def _message(self, line_id: str):
-        messages = self.mongo_db_client.get_messages(line_id)  # 会話履歴の取得
+        messages = self.mongo_db_client.get_one_messages(line_id)  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[line_id]
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
@@ -149,6 +149,7 @@ class message_flow:
         if progress == self.progress_max:
             self._update_history(line_id, message)
             self._exit(line_id)
+            return
         else:
             self.line_client.reply_gpt_response(
                 reply_token=reply_token,
@@ -158,8 +159,7 @@ class message_flow:
                 progress_max=self.progress_max,
             )
             self._update_history(line_id, message, response_text)
-
-        return
+            return
 
     def _generate_question(self, session_id, message, messages):
         # TODO ここに，チャピの回答を取得する処理を書く

@@ -1,12 +1,18 @@
 import argparse
 
-from flask import Flask, request
+from flask import Flask, render_template, request
 
 from src.message_flow import message_flow
 
 app = Flask(__name__)
 args = None
 message_flow_client = None
+
+
+@app.route("/", methods=["GET"])
+def index():
+    # redirect to friend_list
+    return friend_list()
 
 
 @app.route("/callback", methods=["POST"])
@@ -27,8 +33,16 @@ def friend_list():
     for line_id in line_ids:
         profile = message_flow_client.line_client.get_profile(line_id)
         friend_list.append(profile)
-    print(friend_list)
-    return {"friend_list": friend_list}
+    return render_template("friend_list.html", friend_list=friend_list)
+
+
+@app.route("/interview_history", methods=["get"])
+def interview_history():
+    line_id = request.args.get("userId")
+    interview_history = message_flow_client.mongo_db_client.get_messages(line_id)
+    return render_template(
+        "interview_history.html", interview_history=interview_history
+    )
 
 
 def parser() -> argparse.Namespace:

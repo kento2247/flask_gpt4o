@@ -14,8 +14,8 @@ flow:
   initial_question: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
 line:
   template_path:
-    gpt_response: template/gpt_response.json
-    interview_end: template/interview_end.json
+    gpt_response: templates/gpt_response.json
+    interview_end: templates/interview_end.json
   developper_line_id: U4db8598c517126f763da9e261203650a
 # initial_message:
 #   あなたはプラントの現場を取材するプロのインタビュアーです．以下の内容に基づいて、従業員に対してインタビューを行ってください。\n

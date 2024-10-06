@@ -49,12 +49,25 @@ class mongodb:
         self.db.insert_one(new_messages)
         self.sessionid_dict[line_id] = new_session_id
 
-    def get_messages(self, line_id: str) -> list:
+    def get_one_messages(self, line_id: str) -> list:
         if line_id not in self.sessionid_dict:
             self.initialize_messages(line_id)
         session_id = self.sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         return messages["data"]
+
+    def get_messages(self, line_id: str) -> list:
+        # line_idに対応する全てのメッセージを取得
+        messages = self.db.find({"line_id": line_id})
+        messages = [
+            {
+                "session_id": message["session_id"],
+                "data": message["data"],
+                "end": message.get("end", False),
+            }
+            for message in messages
+        ]
+        return messages
 
     def insert_message(self, line_id: str, content_list: list[dict]) -> None:
         if type(content_list) is not list:
