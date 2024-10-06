@@ -22,10 +22,10 @@ def keep_alive():
 
 @app.route("/friend_list", methods=["get"])
 def friend_list():
-    line_ids = message_flow.mongo_db_client.sessionid_dict.keys()
+    line_ids = message_flow_client.mongo_db_client.sessionid_dict.keys()
     friend_list = []
     for line_id in line_ids:
-        profile = message_flow.line_client.get_profile(line_id)
+        profile = message_flow_client.line_client.get_profile(line_id)
         friend_list.append(profile)
     print(friend_list)
     return {"friend_list": friend_list}
