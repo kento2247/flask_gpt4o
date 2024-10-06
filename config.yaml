@@ -10,7 +10,7 @@ server:
   port: 3011
 flow:
   progress_max: 12
-  follow_message: 追加していただきありがとうございます！\n最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
+  follow_message: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
   initial_question: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
 line:
   template_path:
