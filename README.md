@@ -41,3 +41,9 @@
   ```bash
   python app.py
   ```
+
+## reset database
+
+   ```sh
+   python src/mongodb.py
+   ```

@@ -1,3 +1,6 @@
+import datetime
+import json
+import os
 import uuid
 
 import yaml
@@ -8,6 +11,8 @@ class mongodb:
     def __init__(
         self, database_name: str, collection_name: str, username: str, password: str
     ):
+        self.database_name = database_name
+        self.collection_name = collection_name
         self.MONGO_USERNAME = username
         self.MONGO_PASSWORD = password
         self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@{database_name}.aartxch.mongodb.net/?retryWrites=true&w=majority&appName={database_name}"
@@ -74,11 +79,36 @@ class mongodb:
         return None
 
     def all_messages(self) -> list:
-        return list(self.db.find())
+        # 全てのメッセージを_id要素を除いて取得
+        all_messages_list = []
+        for message in self.db.find():
+            message.pop("_id")
+            all_messages_list.append(message)
+        return all_messages_list
+
+    def clear_collection(self, backup_dir_path: str) -> None:
+        if backup_dir_path is not None:
+            # json形式でバックアップ
+            if not os.path.exists(backup_dir_path):
+                os.makedirs(backup_dir_path)
+            datetime_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name = f"{datetime_now}.json"
+            backup_file_path = os.path.join(backup_dir_path, file_name)
+            with open(backup_file_path, "w") as f:
+                json.dump(self.all_messages(), f, indent=4, ensure_ascii=False)
+
+        # collectionの削除
+        self.db.drop()
+
+        # collectionの再作成
+        self.db = self.client[self.database_name][self.collection_name]
+
+        return None
 
 
 if __name__ == "__main__":
     import os
+
     from dotenv import load_dotenv
 
     config = yaml.safe_load(open("config.yaml"))
@@ -96,4 +126,5 @@ if __name__ == "__main__":
         collection_name=mongodb_collection_name,
     )
 
-    all_messages = mongo_db_client.all_messages()
+    # all_messages = mongo_db_client.all_messages()
+    mongo_db_client.clear_collection("backup")
