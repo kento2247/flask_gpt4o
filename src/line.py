@@ -185,7 +185,15 @@ class line:
         response = requests.post(
             "https://api.line.me/v2/bot/message/broadcast",
             headers=self.headers,
-            json=message_json,
+            json={
+                "messages": [
+                    {
+                        "type": "flex",
+                        "altText": "インタビューのお知らせ",
+                        "contents": message_json,
+                    }
+                ]
+            },
         )
         if response.status_code != 200:
             raise Exception(response.text)
