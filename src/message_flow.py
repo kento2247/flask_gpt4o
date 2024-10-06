@@ -1,9 +1,10 @@
 import os
 
+from src.interview_flow.InterviewAgents import InterviewAgents
+
 # from src.gpt import gpt
 from src.line import line
 from src.mongodb import mongodb
-from src.interview_flow.InterviewAgents import InterviewAgents
 
 
 class message_flow:
@@ -36,23 +37,30 @@ class message_flow:
         # #     model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
         # # )
 
-        # 処理中のline_idの保持
-        self.processingline_id = []
+        # 処理中のline_idの保持. {line_id: {reply_token: reply_token, message: message}}
+        self.processing_list = {}
 
     def message_parser(self, request_json):
         parse_data = self.line_client.parse_webhook(request_json)
 
-        self.event_type = parse_data["event_type"]
-        self.line_id = parse_data["line_id"]
-        self.reply_token = parse_data["reply_token"]
-        self.message = parse_data["message"]
+        event_type = parse_data["event_type"]
+        line_id = parse_data["line_id"]
+        reply_token = parse_data["reply_token"]
+        message = parse_data["message"]
 
-        
+        if line_id in self.processing_list:
+            return None
 
-        if self.event_type == "follow":
+        else:
+            self.processing_list[line_id] = {
+                "reply_token": reply_token,
+                "message": message,
+            }
+
+        if event_type == "follow":
             self._follow()
-        elif self.event_type == "message":
-            if self.message == "exit":
+        elif event_type == "message":
+            if message == "exit":
                 self._exit()
             else:
                 self._message()  # messageの中でresumeがあるか判定
@@ -76,38 +84,42 @@ class message_flow:
         )  # 会話履歴の更新
         return
 
-    def _follow(self):
-        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
+    def _follow(self, line_id: str):
+        reply_token = self.processing_list[line_id]["reply_token"]
+        session_id = self.mongo_db_client.sessionid_dict[line_id]
         response_text = self._generate_question(
             session_id,
             "",
             [],
         )
         self.line_client.reply_gpt_response(
-            reply_token=self.reply_token,
+            reply_token=reply_token,
             session_id=session_id,
             message=response_text,
             progress=0,
             progress_max=self.progress_max,
         )  # lineでの返信
         self.mongo_db_client.initialize_messages(
-            self.line_id
+            line_id
         )  # 既存のセッションがあれば終了させ，新しいセッションを作成
         self._update_history([], response_text)
         return
 
-    def _exit(self):
-        self.line_client.reply_interview_end(self.reply_token)
-        self.mongo_db_client.initialize_messages(self.line_id)
+    def _exit(self, line_id: str):
+        reply_token = self.processing_list[line_id]["reply_token"]
+        self.line_client.reply_interview_end(reply_token)
+        self.mongo_db_client.initialize_messages(line_id)
         return
 
-    def _resume(self):
-        messages = self.mongo_db_client.get_messages(self.line_id)
-        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
+    def _resume(self, line_id: str):
+        messages = self.mongo_db_client.get_messages(line_id)
+        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        reply_token = self.processing_list[line_id]["reply_token"]
+
         progress = 7
         reply_message = messages[-1]["content"]  # 最後のメッセージを取得
         self.line_client.reply_gpt_response(
-            reply_token=self.reply_token,
+            reply_token=reply_token,
             session_id=session_id,
             message=reply_message,
             progress=progress,
@@ -115,26 +127,26 @@ class message_flow:
         )
         return
 
-    def _message(self):
-        messages = self.mongo_db_client.get_messages(self.line_id)  # 会話履歴の取得
-        session_id = self.mongo_db_client.sessionid_dict[self.line_id]
+    def _message(self, line_id: str):
+        messages = self.mongo_db_client.get_messages(line_id)  # 会話履歴の取得
+        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        message = self.processing_list[line_id]["message"]
+        reply_token = self.processing_list[line_id]["reply_token"]
 
-        if self.message == "resume" and len(messages) > 1:
-            self._resume()
+        if message == "resume" and len(messages) > 1:
+            self._resume(line_id)
             return
 
-        response_text, progress = self._generate_question(
-            session_id, self.message, messages
-        )
+        response_text, progress = self._generate_question(session_id, message, messages)
         self.line_client.reply_gpt_response(
-            reply_token=self.reply_token,
+            reply_token=reply_token,
             session_id=session_id,
             message=response_text,
             progress=progress,
             progress_max=self.progress_max,
         )
 
-        self._update_history(self.message, response_text)
+        self._update_history(message, response_text)
         return
 
     def _generate_question(self, session_id, message, messages):
