@@ -75,7 +75,7 @@ class message_flow:
         self.line_client.push_message(developper_line_id, error_message)
         return
 
-    def _update_history(self, message: str, assistant_message: str):
+    def _update_history(self, line_id: str, message: str, assistant_message: str):
         if message and message != "resume":
             content_list = [
                 {"role": "user", "content": message},
@@ -83,9 +83,7 @@ class message_flow:
             ]
         else:
             content_list = [{"role": "assistant", "content": assistant_message}]
-        self.mongo_db_client.insert_message(
-            self.line_id, content_list
-        )  # 会話履歴の更新
+        self.mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
         return
 
     def _follow(self, line_id: str):
@@ -107,7 +105,7 @@ class message_flow:
         self.mongo_db_client.initialize_messages(
             line_id
         )  # 既存のセッションがあれば終了させ，新しいセッションを作成
-        self._update_history([], response_text)
+        self._update_history(line_id, [], response_text)
         return
 
     def _exit(self, line_id: str):
@@ -153,7 +151,7 @@ class message_flow:
             progress_max=self.progress_max,
         )
 
-        self._update_history(message, response_text)
+        self._update_history(line_id, message, response_text)
         return
 
     def _generate_question(self, session_id, message, messages):
