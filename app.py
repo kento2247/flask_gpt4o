@@ -38,9 +38,12 @@ def friend_list():
 def interview_history():
     print("interview_history")
     line_id = request.args.get("userId")
+    displayName = request.args.get("displayName")
     interview_history = message_flow_client.mongo_db_client.get_messages(line_id)
     return render_template(
-        "interview_history.html", interview_history=interview_history
+        "interview_history.html",
+        interview_history=interview_history,
+        displayName=displayName,
     )
 
 

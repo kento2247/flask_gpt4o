@@ -18,6 +18,9 @@
             <a href="/friend_list" class="btn btn-primary mr-3">＜友達リストに戻る</a>
             <h1 class="mb-0">インタビュー履歴</h1>
         </div>
+        <div class="text-center mb-4">
+            <h2>{{ displayName }}</h2>
+        </div>
         <div class="accordion" id="interviewAccordion">
             {% for session in interview_history %}
             <div class="card" id="card{{ loop.index }}">
@@ -26,8 +29,6 @@
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
                             {{ session.session_id }}
                         </button>
-                        <button class="btn btn-success btn-sm ml-2" onclick="downloadSession('{{ session.session_id }}')">ダウンロード</button>
-                        <button class="btn btn-danger btn-sm ml-2" onclick="confirmDelete('{{ session.session_id }}', {{ loop.index }})">削除</button>
                     </h2>
                 </div>
                 <div id="collapse{{ loop.index }}" class="collapse" aria-labelledby="heading{{ loop.index }}" data-parent="#interviewAccordion">
@@ -35,6 +36,11 @@
                         {% for message in session.data %}
                         <p class="card-text"><strong>{{ message.role }}:</strong> {{ message.content }}</p>
                         {% endfor %}
+                        <hr>
+                        <div class="d-flex justify-content-center mt-3">
+                            <button class="btn btn-success btn-sm mr-2" onclick="downloadSession('{{ session.session_id }}')">ダウンロード</button>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ session.session_id }}', {{ loop.index }})">削除</button>
+                        </div>
                     </div>
                 </div>
             </div>
