@@ -83,7 +83,7 @@ class message_flow:
         self.line_client.push_message(developper_line_id, error_message)
         return
 
-    def _update_history(self, line_id: str, message: str, assistant_message: str):
+    def _update_history(self, line_id: str, message: str, assistant_message: str = None):
         content_list = []
         if message and message != "resume":
             content_list.append({"role": "user", "content": message})
