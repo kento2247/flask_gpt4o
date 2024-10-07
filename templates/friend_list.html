@@ -4,19 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <title>Friend List</title>
+    <title>友達リスト</title>
+    <style>
+        .center-text {
+            text-align: center;
+        }
+        .card-img-top {
+            width: 50%;
+            height: auto;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <div class="row">
+        <div class="row justify-content-center">
             {% for friend in friend_list %}
-            <div class="col-md-4">
+            <div class="col-md-4 d-flex align-items-stretch">
                 <div class="card mb-4">
-                    <div class="card-body">
+                    <div class="card-body center-text">
                         {# keys = ["userId", "displayName", "pictureUrl", "statusMessage", "language"] #}
                         <h5 class="card-title">{{ friend["displayName"] }}</h5>
-                        <p class="card-text" style="font-size: small;">{{ friend["statusMessage"] }}</p>
-                        <img src="{{ friend["pictureUrl"] }}" class="card-img-top" alt="...">
+                        <p class="card-text" style="font-size: small;">{{ friend["statusMessage"] if friend["statusMessage"] else "<ステータスメッセージ未設定>" }}</p>
+                        <img src="{{ friend["pictureUrl"] }}" class="card-img-top" alt="プロフィール画像">
                         <p class="card-text">使用言語: {{ friend["language"] }}</p>
                         <a href="/interview_history?userId={{ friend["userId"] }}" class="btn btn-primary">インタビュー履歴</a>
                     </div>

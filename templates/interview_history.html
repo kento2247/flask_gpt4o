@@ -6,19 +6,28 @@
     <title>インタビュー履歴</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .center-text {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">インタビュー履歴</h1>
+        <div class="d-flex justify-content-center align-items-center mb-4">
+            <a href="/friend_list" class="btn btn-primary mr-3">＜友達リストに戻る</a>
+            <h1 class="mb-0">インタビュー履歴</h1>
+        </div>
         <div class="accordion" id="interviewAccordion">
             {% for session in interview_history %}
-            <div class="card">
-                <div class="card-header" id="heading{{ loop.index }}" style="background-color: {% if session.end %}lightgray{% endif %};">
+            <div class="card" id="card{{ loop.index }}">
+                <div class="card-header center-text" id="heading{{ loop.index }}" style="background-color: {% if session.end %}lightgray{% endif %};">
                     <h2 class="mb-0">
-                        <input type="checkbox" {% if session.end %}checked{% endif %} disabled>
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
                             {{ session.session_id }}
                         </button>
+                        <button class="btn btn-success btn-sm ml-2" onclick="downloadSession('{{ session.session_id }}')">ダウンロード</button>
+                        <button class="btn btn-danger btn-sm ml-2" onclick="confirmDelete('{{ session.session_id }}', {{ loop.index }})">削除</button>
                     </h2>
                 </div>
                 <div id="collapse{{ loop.index }}" class="collapse" aria-labelledby="heading{{ loop.index }}" data-parent="#interviewAccordion">
@@ -35,5 +44,30 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function confirmDelete(sessionId, index) {
+            if (confirm('本当にこのセッションを削除しますか？')) {
+                deleteSession(sessionId, index);
+            }
+        }
+
+        function deleteSession(sessionId, index) {
+            fetch('/delete_sessionid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            }).then(response => {
+                if (response.ok) {
+                    document.getElementById('card' + index).remove();
+                }
+            });
+        }
+
+        function downloadSession(sessionId) {
+            window.location.href = '/interview_history_json?session_id=' + sessionId;
+        }
+    </script>
 </body>
 </html>

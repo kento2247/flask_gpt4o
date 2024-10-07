@@ -49,11 +49,15 @@ class mongodb:
         self.db.insert_one(new_messages)
         self.sessionid_dict[line_id] = new_session_id
 
-    def get_one_messages(self, line_id: str) -> list:
+    def get_one_messages_line_id(self, line_id: str) -> list:
         if line_id not in self.sessionid_dict:
             self.initialize_messages(line_id)
         session_id = self.sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
+        return messages["data"]
+
+    def get_one_messages_session_id(self, session_id: str) -> list:
+        messages = self.db.find_one({"session_id": session_id})
         return messages["data"]
 
     def get_messages(self, line_id: str) -> list:
@@ -86,8 +90,7 @@ class mongodb:
         self.db.delete_many({"line_id": line_id})
         return None
 
-    def delete_sessionid(self, line_id: str) -> None:
-        session_id = self.sessionid_dict[line_id]
+    def delete_sessionid(self, session_id: str) -> None:
         self.db.delete_many({"session_id": session_id})
         return None
 

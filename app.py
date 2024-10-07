@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from flask import Flask, render_template, request
 
@@ -41,6 +42,33 @@ def interview_history():
     return render_template(
         "interview_history.html", interview_history=interview_history
     )
+
+
+@app.route("/delete_sessionid", methods=["post"])
+def delete_sessionid():
+    print("delete_sessionid")
+    session_id = request.json.get("session_id")
+    message_flow_client.mongo_db_client.delete_sessionid(session_id)
+    return "OK"
+
+
+@app.route("/interview_history_json", methods=["get"])
+def interview_history_json():
+    print("interview_history_json")
+    session_id = request.args.get("session_id")
+    interview_history = message_flow_client.mongo_db_client.get_one_messages_session_id(
+        session_id
+    )
+    response = app.response_class(
+        response=json.dumps(
+            {"interview_history": interview_history}, ensure_ascii=False, indent=4
+        ),
+        mimetype="application/json",
+    )
+    response.headers["Content-Disposition"] = (
+        f"attachment; filename=messages_{session_id}.json"
+    )
+    return response
 
 
 def parser() -> argparse.Namespace:
