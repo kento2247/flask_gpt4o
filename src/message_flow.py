@@ -26,7 +26,7 @@ class message_flow:
             database_name=mongodb_database_name,
             collection_name=mongodb_collection_name,
         )
-        self.interview_agents = InterviewAgents(args)
+        # self.interview_agents = InterviewAgents(args)
 
         # line接続設定
         channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
@@ -178,6 +178,7 @@ class message_flow:
 
     def _generate_question(self, session_id, message, messages):
         # TODO ここに，チャピの回答を取得する処理を書く
+        interview_agents = InterviewAgents(self.args)
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
@@ -185,7 +186,7 @@ class message_flow:
 
         else:
             # 通常の質問生成と進捗管理の処理
-            elements = self.interview_agents.extract_elements(
+            elements = interview_agents.extract_elements(
                 message, messages
             )  # インタビュー状況を把握
             # print(elements)
@@ -204,20 +205,20 @@ class message_flow:
             # progressの合計（各カテゴリごとに最大2までの進捗がカウントされる）
             progress = sum(progress_map.values())
 
-            if self.interview_agents.check_if_interview_should_end(messages, elements):
+            if interview_agents.check_if_interview_should_end(messages, elements):
                 assistant_response = (
                     "本日はインタビューのお時間をいただきありがとうございました"
                 )
 
                 progress = self.progress_max  # インタビュー終了時の進捗
             else:
-                question = self.interview_agents.generate_question(
+                question = interview_agents.generate_question(
                     message, elements, messages
                 )  # 質問を生成
-                improved_question = self.interview_agents.improve_question(
+                improved_question = interview_agents.improve_question(
                     question
                 )  # 質問を改善
-                checked_question = self.interview_agents.check_question(
+                checked_question = interview_agents.check_question(
                     improved_question, message, messages, elements, attempts=0
                 )  # 質問が適切かどうかをチェック. attemptsの初期値は0
                 assistant_response = checked_question
