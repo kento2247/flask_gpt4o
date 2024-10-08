@@ -45,6 +45,7 @@ class mongodb:
             "session_id": new_session_id,
             "line_id": line_id,
             "data": [],
+            "elements": {},
         }
         self.db.insert_one(new_messages)
         self.sessionid_dict[line_id] = new_session_id
@@ -54,11 +55,11 @@ class mongodb:
             self.initialize_messages(line_id)
         session_id = self.sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
-        return messages["data"]
+        return messages
 
     def get_one_messages_session_id(self, session_id: str) -> list:
         messages = self.db.find_one({"session_id": session_id})
-        return messages["data"]
+        return messages
 
     def get_messages(self, line_id: str) -> list:
         # line_idに対応する全てのメッセージを取得
@@ -68,12 +69,15 @@ class mongodb:
                 "session_id": message["session_id"],
                 "data": message["data"],
                 "end": message.get("end", False),
+                "elements": message.get("elements", {}),
             }
             for message in messages
         ]
         return messages
 
-    def insert_message(self, line_id: str, content_list: list[dict]) -> None:
+    def insert_message(
+        self, line_id: str, content_list: list[dict], elements: dict
+    ) -> None:
         if type(content_list) is not list:
             content_list = [content_list]
         if line_id not in self.sessionid_dict:
@@ -81,9 +85,28 @@ class mongodb:
         session_id = self.sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         messages["data"].extend(content_list)
+
+        update_data = {
+            "data": messages["data"],
+        }
+
+        if elements is not None:
+            update_data["elements"] = elements
+
         self.db.update_one(
             {"session_id": session_id, "line_id": line_id},
-            {"$set": {"data": messages["data"]}},
+            {"$set": update_data},
+        )
+
+    def update_elements(self, line_id: str, elements: dict) -> None:
+        if line_id not in self.sessionid_dict:
+            self.initialize_messages(line_id)
+        session_id = self.sessionid_dict[line_id]
+        messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
+        messages["elements"] = elements
+        self.db.update_one(
+            {"session_id": session_id, "line_id": line_id},
+            {"$set": {"elements": messages["elements"]}},
         )
 
     def delete_lineid(self, line_id: str) -> None:
