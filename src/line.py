@@ -41,7 +41,7 @@ class line:
 
     def reply(self, reply_token: str, message: str):
         if reply_token == "local":
-            print(message)
+            print("Assistant: ", message)
             return
         response_json = {
             "replyToken": reply_token,
@@ -87,7 +87,7 @@ class line:
         progress_max: int = 12,
     ):
         if reply_token == "local":  # ローカルでのテスト用
-            print(message)
+            print("Assistant: ", message)
             return
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
@@ -125,7 +125,7 @@ class line:
 
     def reply_interview_end(self, reply_token: str):
         if reply_token == "local":  # ローカルでのテスト用
-            print("インタビュー終了")
+            print("Assistant: ", "インタビュー終了")
             return
         json_path = self.config["line"]["template_path"]["interview_end"]
         template = json.load(open(json_path))
