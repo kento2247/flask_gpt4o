@@ -81,8 +81,8 @@ def main(args):
         result = message_flow_client.message_parser(
             request_json
         )  # result==Falseの場合はインタビュー終了
-        if result is False:
-            break
+        # if result is False:
+        #     break
 
 
 if __name__ == "__main__":

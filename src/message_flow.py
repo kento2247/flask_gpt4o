@@ -134,7 +134,7 @@ class message_flow:
         session_id = self.mongo_db_client.sessionid_dict[line_id]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
-        progress = 7
+        progress = 10
         reply_message = messages[-1]["content"]  # 最後のメッセージを取得
         self.line_client.reply_gpt_response(
             reply_token=reply_token,
