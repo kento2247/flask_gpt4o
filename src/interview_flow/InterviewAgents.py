@@ -139,7 +139,6 @@ class InterviewAgents:
         }
         print(elements)
         return elements
-    
 
     def _add_to_details(self, category, message):
         if category in self.details:
@@ -160,7 +159,6 @@ class InterviewAgents:
         5. 極力最小限の長さにすること。\n
         """
         prompt = f"次の質問を改善してください。相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。：\n{question}"
-
 
         return self._get_gpt_response(system_message, prompt)
 

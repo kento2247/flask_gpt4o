@@ -43,6 +43,10 @@ class message_flow:
         self.processing_dict = {}
 
     def message_parser(self, request_json):
+        """
+        return: True: インタビュー継続, False: インタビュー終了
+        """
+
         parse_data = self.line_client.parse_webhook(request_json)
 
         event_type = parse_data["event_type"]
@@ -52,9 +56,10 @@ class message_flow:
 
         if line_id in self.processing_dict:
             print("line_id is already in processing_dict")
-            return None
+            return True
 
         else:
+            result = True
             try:
                 self.processing_dict[line_id] = {
                     "reply_token": reply_token,
@@ -63,11 +68,15 @@ class message_flow:
 
                 if event_type == "follow":
                     self._follow(line_id)
+                    result = True
                 elif event_type == "message":
                     if message == "exit":
                         self._exit(line_id)
+                        result = False
                     else:
-                        self._message(line_id)  # messageの中でresumeがあるか判定
+                        result = self._message(
+                            line_id
+                        )  # messageの中でresumeがあるか判定
 
             except Exception as e:
                 error_message = f"Error: {e}"
@@ -75,7 +84,8 @@ class message_flow:
                 self.error_send(error_message)
 
             del self.processing_dict[line_id]
-            return
+
+            return result
 
     def error_send(self, error_message: str):
         # self.line_client.reply(self.reply_token, error_message)
@@ -83,7 +93,9 @@ class message_flow:
         self.line_client.push_message(developper_line_id, error_message)
         return
 
-    def _update_history(self, line_id: str, message: str, assistant_message: str = None):
+    def _update_history(
+        self, line_id: str, message: str, assistant_message: str = None
+    ):
         content_list = []
         if message and message != "resume":
             content_list.append({"role": "user", "content": message})
@@ -134,7 +146,10 @@ class message_flow:
         )
         return
 
-    def _message(self, line_id: str):
+    def _message(self, line_id: str) -> bool:
+        """
+        return: True: インタビュー継続, False: インタビュー終了
+        """
         messages = self.mongo_db_client.get_one_messages_line_id(
             line_id
         )  # 会話履歴の取得
@@ -144,14 +159,14 @@ class message_flow:
 
         if message == "resume" and len(messages) > 1:
             self._resume(line_id)
-            return
+            return True
 
         response_text, progress = self._generate_question(session_id, message, messages)
 
         if progress == self.progress_max:
             self._update_history(line_id, message)
             self._exit(line_id)
-            return
+            return False
         else:
             self.line_client.reply_gpt_response(
                 reply_token=reply_token,
@@ -161,7 +176,7 @@ class message_flow:
                 progress_max=self.progress_max,
             )
             self._update_history(line_id, message, response_text)
-            return
+            return True
 
     def _generate_question(self, session_id, message, messages):
         # TODO ここに，チャピの回答を取得する処理を書く
