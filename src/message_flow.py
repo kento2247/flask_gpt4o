@@ -68,7 +68,6 @@ class message_flow:
 
                 if event_type == "follow":
                     self._follow(line_id)
-                    result = True
                 elif event_type == "message":
                     if message == "exit":
                         self._exit(line_id)
@@ -157,7 +156,7 @@ class message_flow:
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
-        if message == "resume" and len(messages) > 1:
+        if message == "resume" and len(messages) >= 1:
             self._resume(line_id)
             return True
 
