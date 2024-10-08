@@ -41,30 +41,36 @@ def parser() -> argparse.Namespace:
 
 
 def main():
+    template_json = {
+        "events": [
+            {
+                "type": "message",
+                "replyToken": "local",
+                "source": {
+                    "userId": "U4db8598c517126f763da9e261203650a",
+                    "type": "user",
+                },
+                "timestamp": 1634668400000,
+                "mode": "active",
+                "message": {
+                    "type": "text",
+                    "id": "14008782937777",
+                    "text": "",
+                },
+            }
+        ]
+    }
+
+    # resumeを送信
+    template_json["events"][0]["message"]["text"] = "resume"
+    message_flow_client.message_parser(template_json)
+
     while True:
         user_message = input("User: ")
-        request_json = {
-            "events": [
-                {
-                    "type": "message",
-                    "replyToken": "local",
-                    "source": {
-                        "userId": "U4db8598c517126f763da9e261203650a",
-                        "type": "user",
-                    },
-                    "timestamp": 1634668400000,
-                    "mode": "active",
-                    "message": {
-                        "type": "text",
-                        "id": "14008782937777",
-                        "text": user_message,
-                    },
-                }
-            ]
-        }
+        template_json["events"][0]["message"]["text"] = user_message
 
         result = message_flow_client.message_parser(
-            request_json
+            template_json
         )  # result==Falseの場合はインタビュー終了
         if result is False:
             break
