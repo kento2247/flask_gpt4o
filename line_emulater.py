@@ -79,7 +79,7 @@ def main(args):
         request_json = make_json(user_message, args.user_id)
 
         result = message_flow_client.message_parser(
-            template_json
+            request_json
         )  # result==Falseの場合はインタビュー終了
         if result is False:
             break
