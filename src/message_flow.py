@@ -204,7 +204,7 @@ class message_flow:
 
             # progressの合計（各カテゴリごとに最大2までの進捗がカウントされる）
             progress = sum(progress_map.values())
-            
+
             if self.interview_agents.check_if_interview_should_end(messages, elements):
                 assistant_response = (
                     "本日はインタビューのお時間をいただきありがとうございました"
@@ -222,6 +222,6 @@ class message_flow:
                     improved_question, message, messages, elements, attempts=0
                 )  # 質問が適切かどうかをチェック. attemptsの初期値は0
                 assistant_response = checked_question
-                progress = 5  # インタビュー進捗
+                # progress = 5  # インタビュー進捗
 
         return assistant_response, progress
