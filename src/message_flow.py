@@ -192,6 +192,19 @@ class message_flow:
             # print(elements)
             # print(messages)
             # インタビューを終了すべきかチェック
+            # 各カテゴリの進捗管理（最大2まで増加させる）
+            progress_map = {"行動": 0, "認知": 0, "情報": 0}
+
+            # カテゴリごとにエントリ数をカウントし、2つまではprogressを増加させる
+            for category, entries in elements.items():
+                entry_count = len(entries)
+                if entry_count > 0:
+                    # 2を上限として、そのカテゴリの要素数に応じてprogressを加算
+                    progress_map[category] = min(entry_count, 2)
+
+            # progressの合計（各カテゴリごとに最大2までの進捗がカウントされる）
+            progress = sum(progress_map.values())
+            
             if self.interview_agents.check_if_interview_should_end(messages, elements):
                 assistant_response = (
                     "本日はインタビューのお時間をいただきありがとうございました"
