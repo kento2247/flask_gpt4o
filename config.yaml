@@ -9,7 +9,7 @@ mongodb:
 server:
   port: 3011
 flow:
-  progress_max: 12
+  progress_max: 6
   follow_message: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
   initial_question: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
 line:

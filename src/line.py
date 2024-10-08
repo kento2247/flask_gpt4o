@@ -87,7 +87,8 @@ class line:
         progress_max: int = 12,
     ):
         if reply_token == "local":  # ローカルでのテスト用
-            print("Assistant: ", message)
+            print("Assistant: ", message, end="")
+            print(f"({progress} / {progress_max})")
             return
         json_path = self.config["line"]["template_path"]["gpt_response"]
         template = json.load(open(json_path))
