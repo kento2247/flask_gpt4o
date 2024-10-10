@@ -81,6 +81,7 @@ class line:
                 "displayName": "テストユーザー",
                 "pictureUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/LINE_New_App_Icon_%282020-12%29.png/800px-LINE_New_App_Icon_%282020-12%29.png",
                 "language": "ja",
+                "userId": "sample",
                 "statusMessage": "",
             }
             return sample_profile
