@@ -126,7 +126,10 @@ class line:
 
     def reply_interview_end(self, reply_token: str):
         if reply_token == "local":  # ローカルでのテスト用
-            print("Assistant: ", "お時間をいただきありがとうございました。インタビューを終了します")
+            print(
+                "Assistant: ",
+                "お時間をいただきありがとうございました。インタビューを終了します",
+            )
             return
         json_path = self.config["line"]["template_path"]["interview_end"]
         template = json.load(open(json_path))
@@ -207,3 +210,16 @@ class line:
         )
         if response.status_code != 200:
             raise Exception(response.text)
+
+
+if __name__ == "__main__":
+    import os
+
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+    line_client = line(channel_access_token)
+    line_client.broadcast_flex_message(
+        json.load(open("templates/broadcast_message.json"))
+    )
