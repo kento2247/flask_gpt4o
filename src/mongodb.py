@@ -155,6 +155,21 @@ class mongodb:
 
         return None
 
+    def remove_short_ended_sessions(self):
+        # 全てのメッセージを取得
+        all_messages = self.all_messages()
+
+        # 削除対象のsession_idを取得
+        session_ids_to_remove = []
+        for messages in all_messages:
+            if len(messages["data"]) <= 1 and messages.get("end", False):
+                session_ids_to_remove.append(messages["session_id"])
+
+        # 対象のline_idのメッセージを削除
+        for session_id in session_ids_to_remove:
+            self.delete_sessionid(session_id)
+            # print(session_id)
+
 
 if __name__ == "__main__":
     import os
@@ -178,3 +193,8 @@ if __name__ == "__main__":
 
     # all_messages = mongo_db_client.all_messages()
     # mongo_db_client.clear_collection("backup")
+
+    # dataのlenが<=1で，end=trueのものを消したい
+
+    # 関数の実行
+    mongo_db_client.remove_short_ended_sessions()
