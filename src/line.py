@@ -79,9 +79,9 @@ class line:
             # raise Exception(response.text)
             sample_profile = {
                 "displayName": "テストユーザー",
-                "pictureUrl": "https://vos.line-scdn.net/strapi-cluster-instance-bucket-84/appicon_01_f9ed1cf01f.jpeg",
+                "pictureUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/LINE_New_App_Icon_%282020-12%29.png/800px-LINE_New_App_Icon_%282020-12%29.png",
                 "language": "ja",
-                "statusMessage": "テストユーザーです",
+                "statusMessage": "",
             }
             return sample_profile
 
