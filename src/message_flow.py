@@ -56,6 +56,7 @@ class message_flow:
 
         if line_id in self.processing_dict:
             print("line_id is already in processing_dict")
+            self.line_client.reply(reply_token, "処理中です")
             return True
 
         else:
@@ -119,9 +120,6 @@ class message_flow:
             progress=0,
             progress_max=self.progress_max,
         )  # lineでの返信
-        self.mongo_db_client.initialize_messages(
-            line_id
-        )  # 既存のセッションがあれば終了させ，新しいセッションを作成
         self._update_history(line_id, [], response_text)
         return
 

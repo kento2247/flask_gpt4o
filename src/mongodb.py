@@ -177,4 +177,4 @@ if __name__ == "__main__":
     )
 
     # all_messages = mongo_db_client.all_messages()
-    mongo_db_client.clear_collection("backup")
+    # mongo_db_client.clear_collection("backup")
