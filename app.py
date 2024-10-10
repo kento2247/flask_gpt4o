@@ -26,7 +26,7 @@ def keep_alive():
 @app.route("/friend_list", methods=["get"])
 def friend_list():
     print("friend_list")
-    line_ids = message_flow_client.mongo_db_client.sessionid_dict.keys()
+    line_ids = message_flow_client.mongo_db_client.get_line_ids()
     friend_list = []
     for line_id in line_ids:
         profile = message_flow_client.line_client.get_profile(line_id)

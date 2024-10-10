@@ -110,7 +110,7 @@ class message_flow:
     def _follow(self, line_id: str):
         print("follow")
         reply_token = self.processing_dict[line_id]["reply_token"]
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         response_text = self.follow_message
         self.line_client.reply_gpt_response(
             reply_token=reply_token,
@@ -134,7 +134,7 @@ class message_flow:
 
     def _resume(self, line_id: str):
         print("resume")
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
@@ -142,7 +142,6 @@ class message_flow:
         for key in elements.keys():
             progress += min(len(elements[key]), 2)
 
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
         reply_message = messages[-1]["content"]  # 最後のメッセージを取得
@@ -159,7 +158,7 @@ class message_flow:
         """
         return: True: インタビュー継続, False: インタビュー終了
         """
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
