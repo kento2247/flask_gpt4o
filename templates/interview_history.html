@@ -36,6 +36,20 @@
                         {% for message in session.data %}
                         <p class="card-text"><strong>{{ message.role }}:</strong> {{ message.content }}</p>
                         {% endfor %}
+                        <div class="elements" style="background-color: #F0F8FF; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                            <h5>要素:</h5>
+                            <ul>
+                                {% for key, values in session.elements.items() %}
+                                <li><strong>{{ key }}:</strong> 
+                                    <ul>
+                                        {% for value in values %}
+                                        <li>{{ value }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                         <hr>
                         <div class="d-flex justify-content-center mt-3">
                             <button class="btn btn-success btn-sm mr-2" onclick="downloadSession('{{ session.session_id }}')">ダウンロード</button>

@@ -62,6 +62,7 @@ def interview_history_json():
     interview_history = message_flow_client.mongo_db_client.get_one_messages_session_id(
         session_id
     )
+    interview_history.pop("_id")
     response = app.response_class(
         response=json.dumps(
             {"interview_history": interview_history}, ensure_ascii=False, indent=4

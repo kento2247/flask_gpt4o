@@ -4,9 +4,9 @@ import openai
 class InterviewAgents:
     def __init__(self, args):
         self.details = {
-            "行動": {},  # 行動に関する回答を蓄積
-            "認知": {},  # 認知に関する回答を蓄積
-            "情報": {},  # 情報に関する回答を蓄積
+            "行動": [],  # 行動に関する回答を蓄積
+            "認知": [],  # 認知に関する回答を蓄積
+            "情報": [],  # 情報に関する回答を蓄積
         }
         assert args.openai_api_key, "OpenAI APIキーが設定されていません"
 
@@ -113,7 +113,7 @@ class InterviewAgents:
         # もし各要素が十分に埋まっていなければ終了しない
         return False
 
-    def extract_elements(self, message, messages):
+    def extract_elements(self, message, messages, elements):
         system_message = """
         あなたは認知タスク分析の専門家です。
         最新の回答が「行動」「認知」「情報」のどのカテゴリに該当するかを判断し、そのカテゴリ名を明示的に返答してください。
@@ -131,21 +131,28 @@ class InterviewAgents:
 
         updated_category = self._get_gpt_response(system_message, prompt).strip()
 
-        self._add_to_details(updated_category, message)
-        elements = {
-            "行動": self.details["行動"],
-            "認知": self.details["認知"],
-            "情報": self.details["情報"],
-        }
-        print(elements)
+        print("dbから持ってきたelements", elements)
+        print("抽出したカテゴリ", updated_category)
+        print("最新の回答", message)
+
+        elements = self._add_to_details(updated_category, message, elements)
+
+        print("更新後のelements", elements)
         return elements
 
-    def _add_to_details(self, category, message):
-        if category in self.details:
-            key = f"entry_{len(self.details[category]) + 1}"
-            self.details[category][key] = message
+    def _add_to_details(self, category, message, elements) -> dict:
+        required_keys = self.details.keys()
+
+        for key in required_keys:
+            if key not in elements:
+                elements[key] = []
+
+        if category in elements:
+            elements[category].append(message)
         else:
             print(f"カテゴリが不明です: {category}")
+
+        return elements
 
     def improve_question(self, question):
         system_message = """

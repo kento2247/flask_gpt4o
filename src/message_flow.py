@@ -60,27 +60,25 @@ class message_flow:
 
         else:
             result = True
-            try:
-                self.processing_dict[line_id] = {
-                    "reply_token": reply_token,
-                    "message": message,
-                }
+            # try:
+            self.processing_dict[line_id] = {
+                "reply_token": reply_token,
+                "message": message,
+            }
 
-                if event_type == "follow":
-                    self._follow(line_id)
-                elif event_type == "message":
-                    if message == "exit":
-                        self._exit(line_id)
-                        result = False
-                    else:
-                        result = self._message(
-                            line_id
-                        )  # messageの中でresumeがあるか判定
+            if event_type == "follow":
+                self._follow(line_id)
+            elif event_type == "message":
+                if message == "exit":
+                    self._exit(line_id)
+                    result = False
+                else:
+                    result = self._message(line_id)  # messageの中でresumeがあるか判定
 
-            except Exception as e:
-                error_message = f"Error: {e}"
-                print(error_message)
-                self.error_send(error_message)
+            # except Exception as e:
+            #     error_message = f"Error: {e}"
+            #     print(error_message)
+            #     self.error_send(error_message)
 
             del self.processing_dict[line_id]
 
@@ -93,14 +91,20 @@ class message_flow:
         return
 
     def _update_history(
-        self, line_id: str, message: str, assistant_message: str = None
+        self,
+        line_id: str,
+        message: str,
+        assistant_message: str = None,
+        elements: dict = None,
     ):
         content_list = []
         if message and message != "resume":
             content_list.append({"role": "user", "content": message})
         if assistant_message:
             content_list.append({"role": "assistant", "content": assistant_message})
-        self.mongo_db_client.insert_message(line_id, content_list)  # 会話履歴の更新
+        self.mongo_db_client.insert_message(
+            line_id, content_list, elements
+        )  # 会話履歴の更新
         return
 
     def _follow(self, line_id: str):
@@ -130,7 +134,11 @@ class message_flow:
 
     def _resume(self, line_id: str):
         print("resume")
-        messages = self.mongo_db_client.get_one_messages_line_id(line_id)
+        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
+        messages = messages_dict["data"]
+        elements = messages_dict.get("elements", {})  # TODO progressの計算に使う
+
         session_id = self.mongo_db_client.sessionid_dict[line_id]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -139,7 +147,7 @@ class message_flow:
             reply_token=reply_token,
             session_id=session_id,
             message=reply_message,
-            progress=0,
+            progress=0,  # TODO 算出したprogressを入れる
             progress_max=self.progress_max,
         )
         return
@@ -148,10 +156,10 @@ class message_flow:
         """
         return: True: インタビュー継続, False: インタビュー終了
         """
-        messages = self.mongo_db_client.get_one_messages_line_id(
-            line_id
-        )  # 会話履歴の取得
         session_id = self.mongo_db_client.sessionid_dict[line_id]
+        messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
+        messages = messages_dict["data"]
+        elements = messages_dict.get("elements", {})
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -159,10 +167,12 @@ class message_flow:
             self._resume(line_id)
             return True
 
-        response_text, progress = self._generate_question(session_id, message, messages)
+        response_text, progress, elements = self._generate_question(
+            session_id, message, messages, elements
+        )
 
         if progress == self.progress_max:
-            self._update_history(line_id, message)
+            self._update_history(line_id, message, None, elements)
             self._exit(line_id)
             return False
         else:
@@ -173,10 +183,10 @@ class message_flow:
                 progress=progress,
                 progress_max=self.progress_max,
             )
-            self._update_history(line_id, message, response_text)
+            self._update_history(line_id, message, response_text, elements)
             return True
 
-    def _generate_question(self, session_id, message, messages):
+    def _generate_question(self, session_id, message, messages, elements):
         # TODO ここに，チャピの回答を取得する処理を書く
         interview_agents = InterviewAgents(self.args)
 
@@ -187,7 +197,7 @@ class message_flow:
         else:
             # 通常の質問生成と進捗管理の処理
             elements = interview_agents.extract_elements(
-                message, messages
+                message, messages, elements
             )  # インタビュー状況を把握
             # print(elements)
             # print(messages)
@@ -224,4 +234,4 @@ class message_flow:
                 assistant_response = checked_question
                 # progress = 5  # インタビュー進捗
 
-        return assistant_response, progress
+        return assistant_response, progress, elements
