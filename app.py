@@ -75,6 +75,15 @@ def interview_history_json():
     return response
 
 
+@app.route("/line_broadcast_send", methods=["get"])
+def line_broadcast_send():
+    print("line_broadcast_send")
+    message_flow_client.line_client.broadcast_flex_message(
+        json.load(open("templates/broadcast_message.json"))
+    )
+    return "OK"
+
+
 def parser() -> argparse.Namespace:
     import os
 
