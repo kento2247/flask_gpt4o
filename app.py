@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 
 from flask import Flask, render_template, request
 
@@ -71,9 +72,7 @@ def interview_history_json():
     )
     interview_history.pop("_id")
     response = app.response_class(
-        response=json.dumps(
-            {"interview_history": interview_history}, ensure_ascii=False, indent=4
-        ),
+        response=json.dumps(interview_history, ensure_ascii=False, indent=4),
         mimetype="application/json",
     )
     response.headers["Content-Disposition"] = (
@@ -117,7 +116,15 @@ def all_data_download():
     print("all_data_download")
     all_messages = message_flow_client.mongo_db_client.all_messages()
     response = app.response_class(
-        response=json.dumps(all_messages, ensure_ascii=False, indent=4),
+        response=json.dumps(
+            {
+                "len": len(all_messages),
+                "data": all_messages,
+                "time": time.time(),
+            },
+            ensure_ascii=False,
+            indent=4,
+        ),
         mimetype="application/json",
     )
     response.headers["Content-Disposition"] = "attachment; filename=all_messages.json"
