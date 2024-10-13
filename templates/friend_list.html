@@ -22,21 +22,27 @@
                 fetch(url, { method: method })
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('Network response was not ok');
+                            if (method === 'GET') {
+                                return response.text().then(text => { throw new Error(text) });
+                            } else {
+                                throw new Error('Network response was not ok');
+                            }
                         }
-                        return response.json();
+                        return method === 'GET' ? response.text() : response.json();
                     })
                     .then(data => {
                         console.log(data);
-                        if (data.message) {
+                        if (method === 'GET') {
+                            window.location.href = url;
+                        } else if (data.message) {
                             alert(data.message);
-                        }
-                        else {
+                        } else {
                             alert('処理が完了しました。');
                         }
                     })
                     .catch(error => {
                         console.error('There was a problem with the fetch operation:', error);
+                        alert('エラーが発生しました: ' + error.message);
                     });
             }
         }
