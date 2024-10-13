@@ -16,8 +16,52 @@
             object-fit: cover;
         }
     </style>
+    <script>
+        function confirmAction(message, url, method = 'GET') {
+            if (confirm(message)) {
+                fetch(url, { method: method })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log(data);
+                        if (data.message) {
+                            alert(data.message);
+                        }
+                        else {
+                            alert('処理が完了しました。');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                    });
+            }
+        }
+    </script>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">メニュー</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="confirmAction('一斉アンケート依頼を送信しますか？', '/line_broadcast_send', 'POST')">一斉アンケート依頼</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="confirmAction('全データをダウンロードしますか？', '/all_data_download')">全データダウンロード</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="confirmAction('データクレンジングを実行しますか？', '/data_creansing', 'POST')">データクレンジング</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <div class="container mt-5">
         <div class="row justify-content-center">
             {% for friend in friend_list %}
@@ -36,5 +80,8 @@
             {% endfor %}
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

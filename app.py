@@ -28,9 +28,16 @@ def friend_list():
     print("friend_list")
     line_ids = message_flow_client.mongo_db_client.get_line_ids()
     friend_list = []
+    cache = {}
+
     for line_id in line_ids:
-        profile = message_flow_client.line_client.get_profile(line_id)
+        if line_id in cache:
+            profile = cache[line_id]
+        else:
+            profile = message_flow_client.line_client.get_profile(line_id)
+            cache[line_id] = profile
         friend_list.append(profile)
+
     return render_template("friend_list.html", friend_list=friend_list)
 
 
@@ -81,7 +88,40 @@ def line_broadcast_send():
     message_flow_client.line_client.broadcast_flex_message(
         json.load(open("templates/broadcast_message.json"))
     )
-    return "OK"
+    response_json = {"message": "broadcast message sent"}
+    response = app.response_class(
+        response=json.dumps(response_json, ensure_ascii=False, indent=4),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/data_creansing", methods=["post"])
+def data_creansing():
+    print("data_creansing")
+    deleted_session_num = (
+        message_flow_client.mongo_db_client.remove_short_ended_sessions()
+    )
+    # json形式で結果を返す
+    response = app.response_class(
+        response=json.dumps(
+            {"message": f"{deleted_session_num} sessions deleted"},
+        ),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/all_data_download", methods=["get"])
+def all_data_download():
+    print("all_data_download")
+    all_messages = message_flow_client.mongo_db_client.all_messages()
+    response = app.response_class(
+        response=json.dumps(all_messages, ensure_ascii=False, indent=4),
+        mimetype="application/json",
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=all_messages.json"
+    return response
 
 
 def parser() -> argparse.Namespace:

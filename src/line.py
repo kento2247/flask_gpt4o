@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 import yaml
@@ -12,6 +13,8 @@ class line:
             "Authorization": f"Bearer {self.channnel_access_token}",
         }
         self.config = yaml.safe_load(open("config.yaml"))
+        self.profile_cache = {}
+        self.cache_timestamp = time.time()
 
     def parse_webhook(self, request_json: dict) -> list:
         response = {
@@ -69,22 +72,34 @@ class line:
             raise Exception(response.text)
 
     def get_profile(self, user_id: str) -> dict:
-        response = requests.get(
-            f"https://api.line.me/v2/bot/profile/{user_id}",
-            headers=self.headers,
-        )
-        if response.status_code == 200:
-            return response.json()
+        # キャッシュのクリアを1日おきに行う
+        current_time = time.time()
+        if current_time - self.cache_timestamp > 86400:  # 86400秒 = 1日
+            self.profile_cache.clear()
+            self.cache_timestamp = current_time
+
+        # キャッシュを確認して、存在しない場合はAPIから取得
+        if user_id in self.profile_cache:
+            return self.profile_cache[user_id]
         else:
-            # raise Exception(response.text)
-            sample_profile = {
-                "displayName": "テストユーザー",
-                "pictureUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/LINE_New_App_Icon_%282020-12%29.png/800px-LINE_New_App_Icon_%282020-12%29.png",
-                "language": "ja",
-                "userId": "sample",
-                "statusMessage": "",
-            }
-            return sample_profile
+            response = requests.get(
+                f"https://api.line.me/v2/bot/profile/{user_id}",
+                headers=self.headers,
+            )
+            if response.status_code == 200:
+                profile = response.json()
+                self.profile_cache[user_id] = profile
+                return profile
+            else:
+                # raise Exception(response.text)
+                sample_profile = {
+                    "displayName": "テストユーザー",
+                    "pictureUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/LINE_New_App_Icon_%282020-12%29.png/800px-LINE_New_App_Icon_%282020-12%29.png",
+                    "language": "ja",
+                    "userId": "sample",
+                    "statusMessage": "",
+                }
+                return sample_profile
 
     def reply_gpt_response(
         self,

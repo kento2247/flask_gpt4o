@@ -155,7 +155,7 @@ class mongodb:
 
         return None
 
-    def remove_short_ended_sessions(self):
+    def remove_short_ended_sessions(self) -> int:
         # 全てのメッセージを取得
         all_messages = self.all_messages()
 
@@ -169,6 +169,8 @@ class mongodb:
         for session_id in session_ids_to_remove:
             self.delete_sessionid(session_id)
             # print(session_id)
+
+        return len(session_ids_to_remove)
 
 
 if __name__ == "__main__":
