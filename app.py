@@ -29,14 +29,9 @@ def friend_list():
     print("friend_list")
     line_ids = message_flow_client.mongo_db_client.get_line_ids()
     friend_list = []
-    cache = {}
 
     for line_id in line_ids:
-        if line_id in cache:
-            profile = cache[line_id]
-        else:
-            profile = message_flow_client.line_client.get_profile(line_id)
-            cache[line_id] = profile
+        profile = message_flow_client.line_client.get_profile(line_id)
         friend_list.append(profile)
 
     return render_template("friend_list.html", friend_list=friend_list)

@@ -80,8 +80,10 @@ class line:
 
         # キャッシュを確認して、存在しない場合はAPIから取得
         if user_id in self.profile_cache:
+            # print("cache hit: ", user_id)
             return self.profile_cache[user_id]
         else:
+            # print("cache miss: ", user_id)
             response = requests.get(
                 f"https://api.line.me/v2/bot/profile/{user_id}",
                 headers=self.headers,
@@ -93,11 +95,11 @@ class line:
             else:
                 # raise Exception(response.text)
                 sample_profile = {
-                    "displayName": "テストユーザー",
+                    "displayName": "anonymous",
                     "pictureUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/LINE_New_App_Icon_%282020-12%29.png/800px-LINE_New_App_Icon_%282020-12%29.png",
-                    "language": "ja",
-                    "userId": "sample",
-                    "statusMessage": "",
+                    "language": "NaN",
+                    "userId": user_id,
+                    "statusMessage": "ブロック済み",
                 }
                 return sample_profile
 
