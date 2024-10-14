@@ -81,7 +81,7 @@ def interview_history_json():
     return response
 
 
-@app.route("/line_broadcast_send", methods=["get"])
+@app.route("/line_broadcast_send", methods=["post"])
 def line_broadcast_send():
     print("line_broadcast_send")
     message_flow_client.line_client.broadcast_flex_message(
@@ -95,9 +95,9 @@ def line_broadcast_send():
     return response
 
 
-@app.route("/data_creansing", methods=["post"])
-def data_creansing():
-    print("data_creansing")
+@app.route("/data_cleansing", methods=["post"])
+def data_cleansing():
+    print("data_cleansing")
     deleted_session_num = (
         message_flow_client.mongo_db_client.remove_short_ended_sessions()
     )
