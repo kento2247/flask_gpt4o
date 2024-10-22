@@ -56,6 +56,7 @@ class message_flow:
 
         if line_id in self.processing_dict:
             print("line_id is already in processing_dict")
+            self.line_client.reply(reply_token, "処理中です")
             return True
 
         else:
@@ -110,7 +111,7 @@ class message_flow:
     def _follow(self, line_id: str):
         print("follow")
         reply_token = self.processing_dict[line_id]["reply_token"]
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         response_text = self.follow_message
         self.line_client.reply_gpt_response(
             reply_token=reply_token,
@@ -119,9 +120,6 @@ class message_flow:
             progress=0,
             progress_max=self.progress_max,
         )  # lineでの返信
-        self.mongo_db_client.initialize_messages(
-            line_id
-        )  # 既存のセッションがあれば終了させ，新しいセッションを作成
         self._update_history(line_id, [], response_text)
         return
 
@@ -134,12 +132,14 @@ class message_flow:
 
     def _resume(self, line_id: str):
         print("resume")
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
-        elements = messages_dict.get("elements", {})  # TODO progressの計算に使う
+        elements = messages_dict.get("elements", {})
+        progress = 0
+        for key in elements.keys():
+            progress += min(len(elements[key]), 2)
 
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
         reply_message = messages[-1]["content"]  # 最後のメッセージを取得
@@ -156,7 +156,7 @@ class message_flow:
         """
         return: True: インタビュー継続, False: インタビュー終了
         """
-        session_id = self.mongo_db_client.sessionid_dict[line_id]
+        session_id = self.mongo_db_client.get_session_id(line_id)
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
@@ -202,18 +202,9 @@ class message_flow:
             # print(elements)
             # print(messages)
             # インタビューを終了すべきかチェック
-            # 各カテゴリの進捗管理（最大2まで増加させる）
-            progress_map = {"行動": 0, "認知": 0, "情報": 0}
-
-            # カテゴリごとにエントリ数をカウントし、2つまではprogressを増加させる
-            for category, entries in elements.items():
-                entry_count = len(entries)
-                if entry_count > 0:
-                    # 2を上限として、そのカテゴリの要素数に応じてprogressを加算
-                    progress_map[category] = min(entry_count, 2)
-
-            # progressの合計（各カテゴリごとに最大2までの進捗がカウントされる）
-            progress = sum(progress_map.values())
+            progress = 0
+            for key in elements.keys():
+                progress += min(len(elements[key]), 2)
 
             if interview_agents.check_if_interview_should_end(messages, elements):
                 assistant_response = (

@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 
 from flask import Flask, render_template, request
 
@@ -26,11 +27,13 @@ def keep_alive():
 @app.route("/friend_list", methods=["get"])
 def friend_list():
     print("friend_list")
-    line_ids = message_flow_client.mongo_db_client.sessionid_dict.keys()
+    line_ids = message_flow_client.mongo_db_client.get_line_ids()
     friend_list = []
+
     for line_id in line_ids:
         profile = message_flow_client.line_client.get_profile(line_id)
         friend_list.append(profile)
+
     return render_template("friend_list.html", friend_list=friend_list)
 
 
@@ -64,14 +67,62 @@ def interview_history_json():
     )
     interview_history.pop("_id")
     response = app.response_class(
-        response=json.dumps(
-            {"interview_history": interview_history}, ensure_ascii=False, indent=4
-        ),
+        response=json.dumps(interview_history, ensure_ascii=False, indent=4),
         mimetype="application/json",
     )
     response.headers["Content-Disposition"] = (
         f"attachment; filename=messages_{session_id}.json"
     )
+    return response
+
+
+@app.route("/line_broadcast_send", methods=["post"])
+def line_broadcast_send():
+    print("line_broadcast_send")
+    message_flow_client.line_client.broadcast_flex_message(
+        json.load(open("templates/broadcast_message.json"))
+    )
+    response_json = {"message": "broadcast message sent"}
+    response = app.response_class(
+        response=json.dumps(response_json, ensure_ascii=False, indent=4),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/data_cleansing", methods=["post"])
+def data_cleansing():
+    print("data_cleansing")
+    deleted_session_num = (
+        message_flow_client.mongo_db_client.remove_short_ended_sessions()
+    )
+    # json形式で結果を返す
+    response = app.response_class(
+        response=json.dumps(
+            {"message": f"{deleted_session_num} sessions deleted"},
+        ),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/all_data_download", methods=["get"])
+def all_data_download():
+    print("all_data_download")
+    all_messages = message_flow_client.mongo_db_client.all_messages()
+    response = app.response_class(
+        response=json.dumps(
+            {
+                "len": len(all_messages),
+                "data": all_messages,
+                "time": time.time(),
+            },
+            ensure_ascii=False,
+            indent=4,
+        ),
+        mimetype="application/json",
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=all_messages.json"
     return response
 
 

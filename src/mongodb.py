@@ -18,7 +18,7 @@ class mongodb:
         self.MONGO_URI = f"mongodb+srv://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@{database_name}.aartxch.mongodb.net/?retryWrites=true&w=majority&appName={database_name}"
         self.client = MongoClient(self.MONGO_URI)
         self.db = self.client[database_name][collection_name]
-        self.sessionid_dict = {}
+        self._sessionid_dict = {}
         self.config = yaml.safe_load(open("config.yaml"))
 
         # endが存在しないcollectionの一覧を取得
@@ -28,11 +28,11 @@ class mongodb:
             for session in sessions:
                 line_id = session["line_id"]
                 session_id = session["session_id"]
-                self.sessionid_dict[line_id] = session_id
+                self._sessionid_dict[line_id] = session_id
 
     def initialize_messages(self, line_id: str) -> None:
-        if line_id in self.sessionid_dict:
-            session_id = self.sessionid_dict[line_id]
+        if line_id in self._sessionid_dict:
+            session_id = self._sessionid_dict[line_id]
             # 終了記号を追加
             self.db.update_many(
                 {"session_id": session_id, "line_id": line_id},
@@ -48,12 +48,12 @@ class mongodb:
             "elements": {},
         }
         self.db.insert_one(new_messages)
-        self.sessionid_dict[line_id] = new_session_id
+        self._sessionid_dict[line_id] = new_session_id
 
     def get_one_messages_line_id(self, line_id: str) -> list:
-        if line_id not in self.sessionid_dict:
+        if line_id not in self._sessionid_dict:
             self.initialize_messages(line_id)
-        session_id = self.sessionid_dict[line_id]
+        session_id = self._sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         return messages
 
@@ -80,9 +80,9 @@ class mongodb:
     ) -> None:
         if type(content_list) is not list:
             content_list = [content_list]
-        if line_id not in self.sessionid_dict:
+        if line_id not in self._sessionid_dict:
             self.initialize_messages(line_id)
-        session_id = self.sessionid_dict[line_id]
+        session_id = self._sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         messages["data"].extend(content_list)
 
@@ -99,9 +99,9 @@ class mongodb:
         )
 
     def update_elements(self, line_id: str, elements: dict) -> None:
-        if line_id not in self.sessionid_dict:
+        if line_id not in self._sessionid_dict:
             self.initialize_messages(line_id)
-        session_id = self.sessionid_dict[line_id]
+        session_id = self._sessionid_dict[line_id]
         messages = self.db.find_one({"session_id": session_id, "line_id": line_id})
         messages["elements"] = elements
         self.db.update_one(
@@ -125,6 +125,17 @@ class mongodb:
             all_messages_list.append(message)
         return all_messages_list
 
+    def get_session_id(self, line_id: str) -> str:
+        session_id = self._sessionid_dict.get(line_id, None)
+        if session_id is None:
+            self.initialize_messages(line_id)
+            session_id = self._sessionid_dict[line_id]
+
+        return session_id
+
+    def get_line_ids(self) -> list[str]:
+        return list(self._sessionid_dict.keys())
+
     def clear_collection(self, backup_dir_path: str) -> None:
         if backup_dir_path is not None:
             # json形式でバックアップ
@@ -143,6 +154,23 @@ class mongodb:
         self.db = self.client[self.database_name][self.collection_name]
 
         return None
+
+    def remove_short_ended_sessions(self) -> int:
+        # 全てのメッセージを取得
+        all_messages = self.all_messages()
+
+        # 削除対象のsession_idを取得
+        session_ids_to_remove = []
+        for messages in all_messages:
+            if len(messages["data"]) <= 1 and messages.get("end", False):
+                session_ids_to_remove.append(messages["session_id"])
+
+        # 対象のline_idのメッセージを削除
+        for session_id in session_ids_to_remove:
+            self.delete_sessionid(session_id)
+            # print(session_id)
+
+        return len(session_ids_to_remove)
 
 
 if __name__ == "__main__":
@@ -166,4 +194,9 @@ if __name__ == "__main__":
     )
 
     # all_messages = mongo_db_client.all_messages()
-    mongo_db_client.clear_collection("backup")
+    # mongo_db_client.clear_collection("backup")
+
+    # dataのlenが<=1で，end=trueのものを消したい
+
+    # 関数の実行
+    mongo_db_client.remove_short_ended_sessions()
