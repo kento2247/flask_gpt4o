@@ -167,7 +167,7 @@ class message_flow:
             self._resume(line_id)
             return True
 
-        response_text, progress, elements = self._generate_question(
+        response_text, progress, elements = self.__generate_question(
             session_id, message, messages, elements
         )
 
@@ -235,3 +235,12 @@ class message_flow:
                 # progress = 5  # インタビュー進捗
 
         return assistant_response, progress, elements
+    def __generate_question(self, session_id, message, messages):
+        # TODO ここに，チャピの回答を取得する処理を書く
+        interview_agents = InterviewAgents(self.args)
+        if len(messages) <= 0:
+            assistant_response = self.initial_question
+            progress = 0
+        else:
+            assistant_response = interview_agents.interview_question(message, messages)
+            return assistant_response 
