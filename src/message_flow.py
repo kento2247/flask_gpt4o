@@ -168,7 +168,7 @@ class message_flow:
             return True
 
         response_text, progress, elements = self.__generate_question(
-            session_id, message, messages, elements
+            session_id, message, messages
         )
 
         if progress == self.progress_max:
