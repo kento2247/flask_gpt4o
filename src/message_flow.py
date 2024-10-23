@@ -167,8 +167,8 @@ class message_flow:
             self._resume(line_id)
             return True
 
-        response_text, progress = self.__generate_question(
-            session_id, message, messages
+        response_text, progress = self._generate_question(
+            session_id, message, messages, elements
         )
 
         if progress == self.progress_max:
@@ -213,12 +213,12 @@ class message_flow:
 
                 progress = self.progress_max  # インタビュー終了時の進捗
             else:
-                question = interview_agents.generate_question(
+                improved_question = interview_agents.generate_question(
                     message, elements, messages
                 )  # 質問を生成
-                improved_question = interview_agents.improve_question(
-                    question
-                )  # 質問を改善
+                # improved_question = interview_agents.improve_question(
+                #     question
+                # )  # 質問を改善
                 checked_question = interview_agents.check_question(
                     improved_question, message, messages, elements, attempts=0
                 )  # 質問が適切かどうかをチェック. attemptsの初期値は0
