@@ -207,7 +207,7 @@ class message_flow:
                 progress += min(len(elements[key]), 2)
 
             if interview_agents.check_if_interview_should_end(messages, elements):
-                assistant_response = interview_agents.generate_summary(messages)
+                assistant_response = "お時間をいただきありがとうございました。インタビューを終了します"
 
                 progress = self.progress_max  # インタビュー終了時の進捗
             else:
