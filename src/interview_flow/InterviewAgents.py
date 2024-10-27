@@ -79,7 +79,7 @@ class InterviewAgents:
         # 分岐処理: elements内の要素に基づいて異なるエージェントを使用する
         # もしすべての要素が2つ以上埋まっている場合、別のエージェントを使用
         #
-        if sum(len(v) for v in elements.values()) >= 5:
+        if sum(len(v) for v in elements.values()) >= 4:
 
             # もしすべての要素が2つ以上埋まっている場合、別のエージェントを使用
             prompt = f"""
@@ -164,7 +164,7 @@ class InterviewAgents:
             return False
 
         # 各側面が2つ以上埋まっているかどうかを確認
-        sufficient_elements = sum(len(v) for v in elements.values()) >= 8
+        sufficient_elements = sum(len(v) for v in elements.values()) >= 6
 
         if sufficient_elements:
             # すべての側面が2つ以上埋まっている場合、次はGPTでの確認
