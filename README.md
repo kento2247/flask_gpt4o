@@ -3,9 +3,13 @@
 ## setup
 1. clone repository
    ```sh
-   git clone git@github.com:kento2247/flask_gpt4o.git
+   git clone --recurse-submodules git@github.com:kento2247/flask_gpt4o.git
    cd flask_gpt4o
    ```
+   - if you forgot to clone with `--recurse-submodules`
+     ```sh
+     git submodule update --init --recursive
+     ```
 
 2. install dependencies
    ```sh
@@ -37,3 +41,9 @@
   ```bash
   python app.py
   ```
+
+## reset database
+
+   ```sh
+   python src/mongodb.py
+   ```

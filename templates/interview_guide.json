@@ -1,0 +1,29 @@
+{
+  "action": {
+    "familierly": {
+      "contents": "",
+      "detail": ""
+    },
+    "content":{
+      "contents": "",
+      "detail": ""
+    },
+    "timepressure":{
+      "contents": "",
+      "detail": ""
+    }
+  },
+  "recognition": {
+    "notion": {},
+    "purpose":{},
+    "possibility":{}
+  },
+  "imformation": {
+    "knowledge": {},
+    "experience":{}
+  },
+  "mentalsimulation": {
+    "basis": {},
+    "alternative":{}
+  }
+}

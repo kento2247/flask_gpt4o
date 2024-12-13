@@ -1,113 +1,137 @@
 import argparse
-import os
+import json
+import time
 
-import yaml
-from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask, render_template, request
 
-from src.gpt import gpt
-from src.line import line
-from src.mongodb import mongodb
+from src.message_flow import message_flow
 
 app = Flask(__name__)
 args = None
-mongo_db_client = None
-line_client = None
-gpt_client = None
-
-
-def line_gpt_response(messages: list, line_id: str, reply_token: str, session_id: str):
-    try:
-        if args.sleep_api:
-            response_text = "APIがスリープ中です．"
-        else:
-            response_text = gpt_client.get_response(messages)
-
-        # ここで「MK:」を追加
-        response_text = f"MK: {response_text}"
-        
-        line_client.reply_gpt_response(
-            reply_token=reply_token, session_id=session_id, message=response_text
-        )  # lineでの返信
-        content_dict = {"role": "assistant", "content": response_text}
-        mongo_db_client.insert_message(line_id, content_dict)  # 会話履歴の更新
-    except Exception as e:
-        response_text += f"エラーが発生しました．\n{e}"
-        app.logger.error(e)
-        line_client.reply(reply_token, response_text)
+message_flow_client = None
 
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    line_id = ""
-    reply_token = ""
-    session_id = ""
-    messages = []
-
-    # リクエストボディを取得
-    body = request.json
-    events = body.get("events", [])
-
-    for event in events:
-        if event["type"] == "message" and event["message"]["type"] == "text":
-            reply_token = event["replyToken"]
-            line_id = event["source"]["userId"]
-            session_id = mongo_db_client.sessionid_dict[line_id]
-            messages = mongo_db_client.get_messages(line_id)  # 会話履歴の取得
-            if len(messages) == 1:  # 初回メッセージ，またはリセット後のメッセージ
-                line_gpt_response(messages, line_id, reply_token, session_id)
-                break
-            else:  # 2回目以降のメッセージ
-                user_message = event["message"]["text"]
-                if user_message == "exit":  # 会話履歴のリセット
-                    line_client.reply_interview_end(reply_token)
-                    mongo_db_client.initialize_messages(line_id)
-                    break
-                else:  # 通常の会話
-                    content_dict = {"role": "user", "content": user_message}
-                    messages.append(content_dict)
-                    line_gpt_response(messages, line_id, reply_token, session_id)
-                    mongo_db_client.insert_message(line_id, content_dict)
-                    break
-
-        # 友達追加やブロック解除のイベント
-        elif event["type"] == "follow":
-            reply_token = event["replyToken"]
-            line_id = event["source"]["userId"]
-            messages = [
-                {
-                    "role": "system",
-                    "content": config["initial_message"],
-                }
-            ]
-            mongo_db_client.initialize_messages(line_id)
-            session_id = mongo_db_client.sessionid_dict[line_id]
-            line_gpt_response(messages, line_id, reply_token, session_id)
-            break
-
+    print("callback")
+    message_flow_client.message_parser(request.json)
     return "OK"
 
 
 @app.route("/keep_alive", methods=["GET"])
 def keep_alive():
+    print("keep_alive")
     return "OK"
 
 
 @app.route("/friend_list", methods=["get"])
 def friend_list():
-    line_ids = mongo_db_client.sessionid_dict.keys()
+    print("friend_list")
+    line_ids = message_flow_client.mongo_db_client.get_line_ids()
     friend_list = []
+
     for line_id in line_ids:
-        profile = line_client.get_profile(line_id)
+        profile = message_flow_client.line_client.get_profile(line_id)
         friend_list.append(profile)
-    print(friend_list)
-    return {"friend_list": friend_list}
+
+    return render_template("friend_list.html", friend_list=friend_list)
 
 
-if __name__ == "__main__":
-    config = yaml.safe_load(open("config.yaml"))
+@app.route("/interview_history", methods=["get"])
+def interview_history():
+    print("interview_history")
+    line_id = request.args.get("userId")
+    displayName = request.args.get("displayName")
+    interview_history = message_flow_client.mongo_db_client.get_messages(line_id)
+    return render_template(
+        "interview_history.html",
+        interview_history=interview_history,
+        displayName=displayName,
+    )
 
-    # コマンドライン引数の取得
+
+@app.route("/delete_sessionid", methods=["post"])
+def delete_sessionid():
+    print("delete_sessionid")
+    session_id = request.json.get("session_id")
+    message_flow_client.mongo_db_client.delete_sessionid(session_id)
+    return "OK"
+
+
+@app.route("/interview_history_json", methods=["get"])
+def interview_history_json():
+    print("interview_history_json")
+    session_id = request.args.get("session_id")
+    interview_history = message_flow_client.mongo_db_client.get_one_messages_session_id(
+        session_id
+    )
+    interview_history.pop("_id")
+    response = app.response_class(
+        response=json.dumps(interview_history, ensure_ascii=False, indent=4),
+        mimetype="application/json",
+    )
+    response.headers["Content-Disposition"] = (
+        f"attachment; filename=messages_{session_id}.json"
+    )
+    return response
+
+
+@app.route("/line_broadcast_send", methods=["post"])
+def line_broadcast_send():
+    print("line_broadcast_send")
+    message_flow_client.line_client.broadcast_flex_message(
+        json.load(open("templates/broadcast_message.json"))
+    )
+    response_json = {"message": "broadcast message sent"}
+    response = app.response_class(
+        response=json.dumps(response_json, ensure_ascii=False, indent=4),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/data_cleansing", methods=["post"])
+def data_cleansing():
+    print("data_cleansing")
+    deleted_session_num = (
+        message_flow_client.mongo_db_client.remove_short_ended_sessions()
+    )
+    # json形式で結果を返す
+    response = app.response_class(
+        response=json.dumps(
+            {"message": f"{deleted_session_num} sessions deleted"},
+        ),
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.route("/all_data_download", methods=["get"])
+def all_data_download():
+    print("all_data_download")
+    all_messages = message_flow_client.mongo_db_client.all_messages()
+    response = app.response_class(
+        response=json.dumps(
+            {
+                "len": len(all_messages),
+                "data": all_messages,
+                "time": time.time(),
+            },
+            ensure_ascii=False,
+            indent=4,
+        ),
+        mimetype="application/json",
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=all_messages.json"
+    return response
+
+
+def parser() -> argparse.Namespace:
+    import os
+
+    import yaml
+    from dotenv import load_dotenv
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--load_env",
@@ -119,33 +143,32 @@ if __name__ == "__main__":
         action="store_true",
         help="Sleep OpenAI API",
     )
+    parser.add_argument(
+        "--config_path",
+        type=str,
+        default="config.yaml",
+        help="Path to config file",
+    )
     args = parser.parse_args()
 
-    # 環境変数の読み込み
     if args.load_env:
         load_dotenv()
 
-    # mongodb接続設定
-    mongodb_username = os.getenv("MONGODB_USERNAME")
-    mongodb_password = os.getenv("MONGODB_PASSWORD")
-    mongodb_app_name = config["mongodb"]["app_name"]
-    mongodb_db_name = config["mongodb"]["db_name"]
-    mongo_db_client = mongodb(
-        username=mongodb_username,
-        password=mongodb_password,
-        app_name=mongodb_app_name,
-        db_name=mongodb_db_name,
-    )
+    args.openai_api_key = os.getenv("OPENAI_API_KEY")
+    args.mongodb_username = os.getenv("MONGODB_USERNAME")
+    args.mongodb_password = os.getenv("MONGODB_PASSWORD")
+    args.line_channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 
-    # line接続設定
-    channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-    line_client = line(channel_access_token)
+    args.config = yaml.safe_load(open(args.config_path))
+    return args
 
-    # gpt接続設定
-    gpt_model = config["gpt"]["model"]
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    gpt_client = gpt(model=gpt_model, api_key=openai_api_key)
+
+if __name__ == "__main__":
+    args = parser()
+
+    # mongodb, line, gptの初期化
+    message_flow_client = message_flow(args)
 
     # サーバーの起動
-    server_port = config["server"]["port"]
+    server_port = args.config["server"]["port"]
     app.run(host="0.0.0.0", port=server_port)

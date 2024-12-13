@@ -1,0 +1,6 @@
+[submodule "interview_flow"]
+	path = interview_flow
+	url = git@github.com:Aquamana06/interview_flow.git
+[submodule "interview_analyzer"]
+	path = interview_analyzer
+	url = git@github.com:aqua-pigeon/interview_analyzer.git
