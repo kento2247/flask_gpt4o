@@ -193,33 +193,13 @@ class message_flow:
 
     def _generate_question(self, session_id, message, messages):
         interview_agents = InterviewAgents(self.args)
-        interview_purpose = self.config["interview_purpose"]
-        question_items = self.config["question_items"]
-        print(interview_purpose)
-        print(question_items)
-        input()
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
             progress = 0
         else:
-            judge_end = interview_agents.judge_end(messages, message)
-            print(judge_end)
-            interview_guide = interview_agents.manage_interview_guide(
-                messages,
-                message,
-                interview_purpose,
-                question_items,
-                interview_guide=None,
-            )
-            print(interview_guide)
-            question = interview_agents.gpt_generate_question(
-                messages, message, interview_guide, judge_end
-            )
-            checked_response = interview_agents.check_question(
-                question=question, message=message, messages=messages, attempts=0
-            )
-            assistant_response = checked_response
+            question = interview_agents.gpt_generate_question(messages, message)
+            assistant_response = question
             progress = 0
         return assistant_response, progress
 
