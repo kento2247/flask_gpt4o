@@ -225,51 +225,19 @@ class InterviewAgents:
         print("更新後のelements", elements)
         return elements
 
-    def manage_interview_guide(self, messages, message, interview_purpose, question_items,interview_guide=None):
+    def manage_interview_guide(self, depth):
         """
-        インタビューガイドを管理し、目的と質問項目に基づいて回答の要約を生成する。
-
-        :param messages: インタビューのメッセージ履歴
-        :param message: 最新のメッセージ
-        :param interview_purpose: インタビューの目的
-        :param question_items: 質問項目のリスト
-        :return: 更新されたインタビューガイド
+        インタビューガイドの進行を管理する
         """
-        # インタビューガイドが提供されていない場合は初期化
-        # 初回のみinterview_guideを初期化
-        if interview_guide is None:
-            interview_guide = {
-                "interview_purpose": interview_purpose,
-                "interviewguide": {}
-            }
+        # もしdepthの各要素がすべてyesであれば、endを返す
+        end_judge="continue"
+        if all([d == "yes" for d in depth.values()]):
+            end_judge="end"
+        return end_judge
 
-        # 各質問項目に対する回答の要約を生成
-        for question in question_items:
-            system_message = """
-            あなたはインタビューガイドを管理するエージェントです。
-            最新のメッセージの内容を簡潔に要約し、
-            インタビューガイドの該当項目を一か所のみ更新してください。
-            """
-
-            prompt = f"""
-            インタビューの目的: {interview_purpose}
-            質問: {question}
-            メッセージ履歴: {messages}
-            最新のメッセージ: {message}
-
-            上記の情報をもとに、該当する一つ「{question}」に関する回答の要約のみを簡潔に出力してください。
-            """
-
-            # GPTを使用して要約を生成
-            summary = self._get_gpt_response(system_message, prompt)
-            if summary:
-                interview_guide["interviewguide"][question] = summary.strip()
-
-        return interview_guide
-
-    def gpt_generate_question(self, messages, message, interview_guide, judge_end):
+    def gpt_generate_question(self, messages, message, depth, judge_end_element, end_judge, judge_end):
         system_message = """
-        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めて質問を生成してください。\n
+        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めてインタビューを行ってください。\n
         目的：インタビューガイドに従い、対話履歴と直前の回答を参照しながら、半構造化インタビューを行ってください。インタビューは短くて構いませんが、深堀して思いの真相を聞き出すことを意識してください。インタビューガイドは上から優先度が高い順に質問項目が並んでいます。\n
         内容説明：
         半構造化インタビューは、あらかじめ用意されたインタビューガイドに基づいて進行しますが、回答者の発言に応じて質問を追加したり、変更したりすることが可能なインタビュー手法です。半構造化インタビューでは、対象者が自由に意見を述べられるようにしつつ、研究のテーマや目標に焦点を当てる必要があります。
@@ -279,19 +247,27 @@ class InterviewAgents:
         2.インタビューの趣旨を簡単に説明し、そのあと、本題のインタビューに入る
         3.インタビューに参加してくれたことに対する感謝を示して終了する
         制約：質問については、以下のことを意識してください。\n
-        1.具体的かつ簡潔で明確な質問
+        1.具体的かつ明確な質問
         2.誘導的でない質問
         3.オープンエンドな質問
-        4. 本音や、背景にある意味や動機を引き出すために、次の質問技法を活用する。仮説の提示,具体物を提示,主観的意見の提示,共感,後押し\n
-        終了条件:インタビューガイドについての項目を一通り質問し終えたときか、感情予測に基づく終了判定がyesの時は、質問内容を変えるか、インタビューを終了してください。
+        4. 本音や、背景にある意味や動機を引き出すために、仮説の提示,具体物を提示,主観的意見の提示,共感,後押し、呼び水をする、を活用する。\n
+        最後に、最も重要なことですが、各項目の回答で深い意味を引き出しているかの判定材料である、「深さ」がyesの項目は、深堀を止めて別の質問に移ってください。また、質問変更条件が終了判定のどちらかがendの場合、インタビューを終了してください\n
         """
         prompt = f"""
-        インタビューガイド: {interview_guide}
+        インタビューガイドは以下のinterview_purposeとquestion_itemsです。
+        interview_purpose: "ミルクスチーミングにおける暗黙知を含む認知プロセスとその深層の価値観の理解"
+        question_items:
+        - "ミルクスチーミングについての行動（方法や内容、頻度など）"
+        - "認知（手がかり、優先度、目標など）"
+        - "情報（用いる経験や情報など）"
         メッセージ履歴: {messages}
         直前の回答: {message}
-        感情に基づく終了判定: {judge_end}
-        半構造化インタビューのプロとして、簡潔かつ端的な質問を生成してください。
-        感情に基づく終了判定がyesの場合、インタビューを終了してください。
+        質問変更条件：{judge_end_element}{depth}
+        終了判定：{end_judge}{judge_end}
+        ""半構造化インタビューのプロ""として、インタビューを行ってください。相手の回答に合わせて、意味を確認したり、深堀して本音を引き出すことも意識してください。
+        インタビューガイドの項目に関しての回答が得られたらインタビューを終了してください。必ず一文にしてください。1対話につき一つの相槌と質問のみを生成してください。
+        また、質問変更条件のどちらかが"end"の場合は必ず別のインタビューガイドの質問項目に移ってください。\n
+        最後に、終了判定のどちらかが"end"の場合は必ずインタビューを終了してください。\n
         """
         question = self._get_gpt_response(system_message, prompt)
         return question
@@ -340,7 +316,7 @@ class InterviewAgents:
                 return question
 
             # 新しい質問を生成
-            
+
             new_question = self.gpt_generate_question(messages, message, interview_guide, judge_end)
 
             # 再度、生成した質問の適切性を確認
@@ -350,18 +326,54 @@ class InterviewAgents:
 
         return question
 
-    def judge_end(self,messages,message):
+    def judge_end(self, messages, message, judge_end_list):
         system_message = """
-        あなたは、回答者がインタビュー中に不快や退屈を感じているかを判断するエージェントです。対話履歴{messages}と{message}を参照して、「つまらない」、「もういい」、「疲れた」などの表現や、「うん」「はい」などの単調な返答があるなどを手掛かりに、相手がインタビューに対して不快に感じているかを判断し、インタビューを終了した方がよいほど不快に感じていると判断した場合はyes、そうでない場合はnoを返してください。
+        あなたは、回答者がインタビュー中に不快や退屈を感じているかを判断するエージェントです。対話履歴と最新の回答を参照して、「つまらない」、「もういい」、「疲れた」などの表現や、「うん」「はい」などの単調な返答があるなどを手掛かりに、相手がインタビューに対して不快に感じているかを判断し、インタビューを終了した方がよいほど不快に感じていると判断した場合はend、そうでない場合はcontinueを返してください。
         """
         prompt = f"""
         対話履歴: {messages}
         最新の回答: {message}
-        話題を変えたり、インタビューを終了するべきか、回答者の感情を予測しyesかnoで回答してください。
+        話題を変えたり、インタビューを終了するべきか、回答者の感情を予測し終了すべき場合はend、そうでない場合はcontinueを出力してください。
         """
-        judge_end=self._get_gpt_response(system_message, prompt)
+        # judge_end_listがNoneの場合は空のリストを初期化
+        
+        judge_end_element = self._get_gpt_response(system_message, prompt)
+        judge_end_list.append(judge_end_element)
+        return judge_end_list, judge_end_element
+
+    def count_judge_end(self, judge_end_list, question_items):
+        if judge_end_list.count("end") >= len(question_items):
+            judge_end = "end"
+        else:
+            judge_end = "continue"
         return judge_end
 
+    def judge_depth(
+        self, messages, message, question_items):
+
+        depth = { "depth": {},}
+
+        for question in question_items:
+            system_message = """
+            あなたは直前の回答者の回答の意味の深さが深いかどうかを判断し、質問項目を変えるべきかどうかを判断するエージェントです。対話履歴と直前の回答を参照して、回答者の回答に価値観が含まれているか判断し、含まれている場合はend、ない場合はcontinueを出力してください。
+            深いというのは、価値観や思いの深層に相当する部分であり、各インタビューガイドにおける質問項目に対して、深い回答が得ることができたかどうかを判断してください。
+
+        """
+
+            prompt = f"""
+            質問: {question}
+            メッセージ履歴: {messages}
+            最新のメッセージ: {message}
+
+            上記の情報をもとに、「{question}」において価値観などの深い回答が得られているどうかを判断し、深い場合はend、そうでない場合はcontinueを出力してください。
+            """
+
+            # GPTを使用して要約を生成
+            summary = self._get_gpt_response(system_message, prompt)
+            if summary:
+                depth["depth"][question] = summary.strip()
+
+        return depth
     # def _add_to_details(self, category, message, elements) -> dict:
     #     required_keys = self.details.keys()
 
@@ -445,7 +457,6 @@ class InterviewAgents:
 
     #     return improved_question
 
-    
     # def generate_summary(self, messages):
     #     system_message = """
     #     あなたはインタビューの専門家です。これまでのメッセージ履歴をもとに、インタビューの総括を行ってください。

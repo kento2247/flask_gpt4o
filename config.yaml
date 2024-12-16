@@ -4,11 +4,11 @@ openai:
   temperature: 0.5
   early_stopping: True
 
-interview_purpose: "従業員のタスクに対する認知プロセスとその背景にある信念を理解すること"
+interview_purpose: "ミルクスチーミングにおける暗黙知を含む認知プロセスとその深層の価値観の理解"
 question_items:
-  - "タスク内容"
-  - "認知プロセス"
-  - "活用している情報"
+  - "ミルクスチーミングについての行動（方法や内容、頻度など）"
+  - "認知（手がかり、優先度、目標など）"
+  - "情報（用いる経験や情報など）"
 mongodb:
   database_name: interview_data
   collection_name: v1

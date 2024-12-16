@@ -159,6 +159,7 @@ class message_flow:
         session_id = self.mongo_db_client.get_session_id(line_id)
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
+        
         elements = messages_dict.get("elements", {})
         # interview_purpose = self.config["interview_purpose"]
         # question_items = self.config["question_items"]
@@ -193,33 +194,25 @@ class message_flow:
 
     def _generate_question(self, session_id, message, messages):
         interview_agents = InterviewAgents(self.args)
-        interview_purpose = self.config["interview_purpose"]
         question_items = self.config["question_items"]
-        print(interview_purpose)
-        print(question_items)
-        input()
-
+        judge_end_list = []  # judge_end_listを関数の外で初期化
+        
         if len(messages) <= 0:
             assistant_response = self.initial_question
             progress = 0
         else:
-            judge_end = interview_agents.judge_end(messages, message)
+            depth = interview_agents.judge_depth(messages, message, question_items)
+            print(depth)
+            end_judge = interview_agents.manage_interview_guide(depth)
+            print(end_judge)
+            judge_end_list, judge_end_element = interview_agents.judge_end(messages, message, judge_end_list)
+            print(judge_end_list)
+            print(judge_end_element)
+            judge_end = interview_agents.count_judge_end(judge_end_list, question_items)
             print(judge_end)
-            interview_guide = interview_agents.manage_interview_guide(
-                messages,
-                message,
-                interview_purpose,
-                question_items,
-                interview_guide=None,
-            )
-            print(interview_guide)
             question = interview_agents.gpt_generate_question(
-                messages, message, interview_guide, judge_end
-            )
-            checked_response = interview_agents.check_question(
-                question=question, message=message, messages=messages, attempts=0
-            )
-            assistant_response = checked_response
+                messages, message, depth, judge_end_element, end_judge, judge_end)
+            assistant_response = question
             progress = 0
         return assistant_response, progress
 
