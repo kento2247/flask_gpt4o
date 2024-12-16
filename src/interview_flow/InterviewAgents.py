@@ -290,7 +290,7 @@ class InterviewAgents:
         メッセージ履歴: {messages}
         直前の回答: {message}
         感情に基づく終了判定: {judge_end}
-        半構造化インタビューのプロとして、簡潔かつ端的な質問を生成してください。
+        半構造化インタビューのプロとして、簡潔かつ短いフレーズによるインタビューを行ってください。相手の言っていることの意味を確認したり、深堀して本音を引き出すことも意識してください。
         感情に基づく終了判定がyesの場合、インタビューを終了してください。
         """
         question = self._get_gpt_response(system_message, prompt)
@@ -340,7 +340,7 @@ class InterviewAgents:
                 return question
 
             # 新しい質問を生成
-            
+
             new_question = self.gpt_generate_question(messages, message, interview_guide, judge_end)
 
             # 再度、生成した質問の適切性を確認
@@ -445,7 +445,6 @@ class InterviewAgents:
 
     #     return improved_question
 
-    
     # def generate_summary(self, messages):
     #     system_message = """
     #     あなたはインタビューの専門家です。これまでのメッセージ履歴をもとに、インタビューの総括を行ってください。
