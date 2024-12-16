@@ -160,8 +160,8 @@ class message_flow:
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
-        # interview_purpose = self.config["interview_purpose"]
-        # question_items = self.config["question_items"]
+        interview_purpose = self.config["interview_purpose"]
+        question_items = self.config["question_items"]
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -195,9 +195,7 @@ class message_flow:
         interview_agents = InterviewAgents(self.args)
         interview_purpose = self.config["interview_purpose"]
         question_items = self.config["question_items"]
-        print(interview_purpose)
-        print(question_items)
-        input()
+        
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
