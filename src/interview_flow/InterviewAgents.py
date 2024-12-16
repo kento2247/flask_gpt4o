@@ -15,6 +15,8 @@ class InterviewAgents:
         self.max_tokens = args.config["openai"]["max_tokens"]
         self.temperature = args.config["openai"]["temperature"]
         self.early_stopping = args.config["openai"]["early_stopping"]
+        self.interview_purpose = args.config["interview_purpose"]
+        self.question_items = args.config["question_items"]
 
     def _get_gpt_response(self, sys_message: str, usr_message: str) -> str:
         req_messages = [
@@ -223,52 +225,93 @@ class InterviewAgents:
         print("更新後のelements", elements)
         return elements
 
-    def _add_to_details(self, category, message, elements) -> dict:
-        required_keys = self.details.keys()
-
-        for key in required_keys:
-            if key not in elements:
-                elements[key] = []
-
-        if category in elements:
-            elements[category].append(message)
-        else:
-            print(f"カテゴリが不明です: {category}")
-
-        return elements
-
-    def improve_question(self, question):
-        system_message = """
-        あなたは心理学とインタビュー技法の専門家です。本人が自意識的に取り組んでいないような隠れた認知を取り出すためには、柔軟で自然な会話を通して相手から効果的に情報を引き出すための工夫が必要になります。\n
-        インタビューの質問に答えたくなるような、柔軟で受け入れやすい質問文に改善してください。\n
-        ただし、以下のインタビュー技法や心理学を用いてください。\n
-        1. オープンクエスチョンとクローズドクエスチョンのバランスを取ること。\n
-        2. リフレクティブリスニングをすること。例":"その状況は難しそうですが、実際にはどうでしょうか？
-        3. 適度にインタビュアーとしての意見や推論を言うこと。例":"過去に何か教訓を得た経験があったから、そうやっているのでしょうか？\n
-        4. フレーミング効果を使うこと。例":"この状況でどうしてもうまくいかないと感じることがありますか？\n
-        5. 極力最小限の長さにすること。\n
+    def manage_interview_guide(self, messages, message, interview_purpose, question_items,interview_guide=None):
         """
-        prompt = f"次の質問を改善してください。相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。ただし、それは興味深いですねとそれは面白いですねはやめてください。：\n{question}"
+        インタビューガイドを管理し、目的と質問項目に基づいて回答の要約を生成する。
 
-        return self._get_gpt_response(system_message, prompt)
+        :param messages: インタビューのメッセージ履歴
+        :param message: 最新のメッセージ
+        :param interview_purpose: インタビューの目的
+        :param question_items: 質問項目のリスト
+        :return: 更新されたインタビューガイド
+        """
+        # インタビューガイドが提供されていない場合は初期化
+        # 初回のみinterview_guideを初期化
+        if interview_guide is None:
+            interview_guide = {
+                "interview_purpose": interview_purpose,
+                "interviewguide": {}
+            }
+
+        # 各質問項目に対する回答の要約を生成
+        for question in question_items:
+            system_message = """
+            あなたはインタビューガイドを管理するエージェントです。
+            最新のメッセージの内容を簡潔に要約し、
+            インタビューガイドの該当項目を一か所のみ更新してください。
+            """
+
+            prompt = f"""
+            インタビューの目的: {interview_purpose}
+            質問: {question}
+            メッセージ履歴: {messages}
+            最新のメッセージ: {message}
+
+            上記の情報をもとに、該当する一つ「{question}」に関する回答の要約のみを簡潔に出力してください。
+            """
+
+            # GPTを使用して要約を生成
+            summary = self._get_gpt_response(system_message, prompt)
+            if summary:
+                interview_guide["interviewguide"][question] = summary.strip()
+
+        return interview_guide
+
+    def gpt_generate_question(self, messages, message, interview_guide, judge_end):
+        system_message = """
+        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めて質問を生成してください。\n
+        目的：インタビューガイドに従い、対話履歴と直前の回答を参照しながら、半構造化インタビューを行ってください。インタビューは短くて構いませんが、深堀して思いの真相を聞き出すことを意識してください。インタビューガイドは上から優先度が高い順に質問項目が並んでいます。\n
+        内容説明：
+        半構造化インタビューは、あらかじめ用意されたインタビューガイドに基づいて進行しますが、回答者の発言に応じて質問を追加したり、変更したりすることが可能なインタビュー手法です。半構造化インタビューでは、対象者が自由に意見を述べられるようにしつつ、研究のテーマや目標に焦点を当てる必要があります。
+        インタビューガイドは、調査の目標に基づいて設計され、インタビューの方向性を明確にするもので、インタビューの目的と大まかな質問項目が示されています。\n
+        インタビューの流れ：
+        1.初めに緊張を和らげるための序盤の質問をする
+        2.インタビューの趣旨を簡単に説明し、そのあと、本題のインタビューに入る
+        3.インタビューに参加してくれたことに対する感謝を示して終了する
+        制約：質問については、以下のことを意識してください。\n
+        1.具体的かつ簡潔で明確な質問
+        2.誘導的でない質問
+        3.オープンエンドな質問
+        4. 本音や、背景にある意味や動機を引き出すために、次の質問技法を活用する。仮説の提示,具体物を提示,主観的意見の提示,共感,後押し\n
+        終了条件:インタビューガイドについての項目を一通り質問し終えたときか、感情予測に基づく終了判定がyesの時は、質問内容を変えるか、インタビューを終了してください。
+        """
+        prompt = f"""
+        インタビューガイド: {interview_guide}
+        メッセージ履歴: {messages}
+        直前の回答: {message}
+        感情に基づく終了判定: {judge_end}
+        半構造化インタビューのプロとして、簡潔かつ端的な質問を生成してください。
+        感情に基づく終了判定がyesの場合、インタビューを終了してください。
+        """
+        question = self._get_gpt_response(system_message, prompt)
+        return question
 
     def check_question(
-        self, improved_question, message, messages, elements, attempts=0
+        self, question, message, messages, attempts=0, interview_guide=None, judge_end=None
     ):
         system_message = """
         あなたはインタビューの専門家で、改善された質問が適切かどうかを判断する役割を持っています。
         初めて聞く内容の質問であれば適切、履歴に類似した内容の質問があれば不適切とし、インタビュー履歴と最新の回答を参考にして、質問が新しい内容で、似た質問をそれまでに生成していないか、予想される回答がインタビュー履歴にないかどうか判断し、質問として適切かどうかを確認してください。
         類似した内容の基準は、質問の意図が似ている場合です。
-        例えば、注意、手がかり、情報、経験などの単語が出現するのが二回目であれば、不適切としてください。
         """
 
         prompt = f"""
-        改善された質問: {improved_question}
+        改善された質問: {question}
         最新の回答: {message}
         インタビュー履歴:
         {messages}
 
-        この質問は適切ですか？過去に類似した質問がなく、適切であればそのまま{improved_question}の質問を出力し、インタビュー履歴{messages}または、直前の回答{message}に類似した内容が既に存在する場合は「不適切」とだけ出力してください。
+        この質問は適切ですか？過去に類似した質問がなく、適切であれば、{question}の質問を出力し、インタビュー履歴{messages}または、直前の回答{message}に類似した内容が既に存在する場合は「不適切」とだけ出力してください。
         """
 
         # checked_response = self._get_gpt_response(system_message, prompt)
@@ -294,29 +337,126 @@ class InterviewAgents:
             attempts += 1
 
             if attempts >= 7:
-                return improved_question
+                return question
 
             # 新しい質問を生成
-            new_question = self.generate_question(elements, messages, message)
+            
+            new_question = self.gpt_generate_question(messages, message, interview_guide, judge_end)
 
             # 再度、生成した質問の適切性を確認
             return self.check_question(
-                new_question, message, messages, elements, attempts
+                new_question, message, messages, attempts
             )
 
-        return improved_question
+        return question
 
-    def generate_summary(self, messages):
+    def judge_end(self,messages,message):
         system_message = """
-        あなたはインタビューの専門家です。これまでのメッセージ履歴をもとに、インタビューの総括を行ってください。
-        インタビューの内容を簡潔にまとめ、インタビューがどのような流れで進んだか、主なポイントを明確にしてください。最後に、インタビューの終わりとして相手に感謝の言葉を伝える一文を加えてください。
+        あなたは、回答者がインタビュー中に不快や退屈を感じているかを判断するエージェントです。対話履歴{messages}と{message}を参照して、「つまらない」、「もういい」、「疲れた」などの表現や、「うん」「はい」などの単調な返答があるなどを手掛かりに、相手がインタビューに対して不快に感じているかを判断し、インタビューを終了した方がよいほど不快に感じていると判断した場合はyes、そうでない場合はnoを返してください。
         """
-
-        # メッセージ履歴を踏まえた総括を生成
         prompt = f"""
-        メッセージ履歴: {messages}
-
-        このメッセージ履歴に基づいて、インタビューの総括を行ってください。
+        対話履歴: {messages}
+        最新の回答: {message}
+        話題を変えたり、インタビューを終了するべきか、回答者の感情を予測しyesかnoで回答してください。
         """
-        summary_response = self._get_gpt_response(system_message, prompt)
-        return summary_response
+        judge_end=self._get_gpt_response(system_message, prompt)
+        return judge_end
+
+    # def _add_to_details(self, category, message, elements) -> dict:
+    #     required_keys = self.details.keys()
+
+    #     for key in required_keys:
+    #         if key not in elements:
+    #             elements[key] = []
+
+    #     if category in elements:
+    #         elements[category].append(message)
+    #     else:
+    #         print(f"カテゴリが不明です: {category}")
+
+    #     return elements
+
+    # def improve_question(self, question):
+    #     system_message = """
+    #     あなたは心理学とインタビュー技法の専門家です。本人が自意識的に取り組んでいないような隠れた認知を取り出すためには、柔軟で自然な会話を通して相手から効果的に情報を引き出すための工夫が必要になります。\n
+    #     インタビューの質問に答えたくなるような、柔軟で受け入れやすい質問文に改善してください。\n
+    #     ただし、以下のインタビュー技法や心理学を用いてください。\n
+    #     1. オープンクエスチョンとクローズドクエスチョンのバランスを取ること。\n
+    #     2. リフレクティブリスニングをすること。例":"その状況は難しそうですが、実際にはどうでしょうか？
+    #     3. 適度にインタビュアーとしての意見や推論を言うこと。例":"過去に何か教訓を得た経験があったから、そうやっているのでしょうか？\n
+    #     4. フレーミング効果を使うこと。例":"この状況でどうしてもうまくいかないと感じることがありますか？\n
+    #     5. 極力最小限の長さにすること。\n
+    #     """
+    #     prompt = f"次の質問を改善してください。相槌と、一つの質問のみを生成してください。なるべく短い文でまとめてください。ただし、それは興味深いですねとそれは面白いですねはやめてください。：\n{question}"
+
+    #     return self._get_gpt_response(system_message, prompt)
+
+    # def check_question(
+    #     self, improved_question, message, messages, elements, attempts=0
+    # ):
+    #     system_message = """
+    #     あなたはインタビューの専門家で、改善された質問が適切かどうかを判断する役割を持っています。
+    #     初めて聞く内容の質問であれば適切、履歴に類似した内容の質問があれば不適切とし、インタビュー履歴と最新の回答を参考にして、質問が新しい内容で、似た質問をそれまでに生成していないか、予想される回答がインタビュー履歴にないかどうか判断し、質問として適切かどうかを確認してください。
+    #     類似した内容の基準は、質問の意図が似ている場合です。
+    #     例えば、注意、手がかり、情報、経験などの単語が出現するのが二回目であれば、不適切としてください。
+    #     """
+
+    #     prompt = f"""
+    #     改善された質問: {improved_question}
+    #     最新の回答: {message}
+    #     インタビュー履歴:
+    #     {messages}
+
+    #     この質問は適切ですか？過去に類似した質問がなく、適切であればそのまま{improved_question}の質問を出力し、インタビュー履歴{messages}または、直前の回答{message}に類似した内容が既に存在する場合は「不適切」とだけ出力してください。
+    #     """
+
+    #     # checked_response = self._get_gpt_response(system_message, prompt)
+
+    #     # if "不適切" in checked_response:
+    #     #     attempts += 1
+
+    #     #     if attempts >= 5:
+    #     #         return improved_question
+
+    #     #     new_question = self.generate_question(elements, messages, message)
+    #     #     improved_question = self.improve_question(new_question)
+
+    #     #     return self.check_question(
+    #     #         improved_question, message, messages, elements, attempts
+    #     #     )
+
+    #     # return improved_question
+
+    #     checked_response = self._get_gpt_response(system_message, prompt)
+
+    #     if "不適切" in checked_response:
+    #         attempts += 1
+
+    #         if attempts >= 7:
+    #             return improved_question
+
+    #         # 新しい質問を生成
+    #         new_question = self.generate_question(elements, messages, message)
+
+    #         # 再度、生成した質問の適切性を確認
+    #         return self.check_question(
+    #             new_question, message, messages, elements, attempts
+    #         )
+
+    #     return improved_question
+
+    
+    # def generate_summary(self, messages):
+    #     system_message = """
+    #     あなたはインタビューの専門家です。これまでのメッセージ履歴をもとに、インタビューの総括を行ってください。
+    #     インタビューの内容を簡潔にまとめ、インタビューがどのような流れで進んだか、主なポイントを明確にしてください。最後に、インタビューの終わりとして相手に感謝の言葉を伝える一文を加えてください。
+    #     """
+
+    #     # メッセージ履歴を踏まえた総括を生成
+    #     prompt = f"""
+    #     メッセージ履歴: {messages}
+
+    #     このメッセージ履歴に基づいて、インタビューの総括を行ってください。
+    #     """
+    #     summary_response = self._get_gpt_response(system_message, prompt)
+    #     return summary_response

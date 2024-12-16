@@ -160,6 +160,8 @@ class message_flow:
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
+        # interview_purpose = self.config["interview_purpose"]
+        # question_items = self.config["question_items"]
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -168,7 +170,10 @@ class message_flow:
             return True
 
         response_text, progress = self._generate_question(
-            session_id, message, messages, elements
+            session_id,
+            message,
+            messages,
+            # elements
         )
 
         if progress == self.progress_max:
@@ -186,47 +191,79 @@ class message_flow:
             self._update_history(line_id, message, response_text, elements)
             return True
 
-    def _generate_question(self, session_id, message, messages, elements):
-        # TODO ここに，チャピの回答を取得する処理を書く
+    def _generate_question(self, session_id, message, messages):
         interview_agents = InterviewAgents(self.args)
+        interview_purpose = self.config["interview_purpose"]
+        question_items = self.config["question_items"]
+        print(interview_purpose)
+        print(question_items)
+        input()
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
             progress = 0
-
         else:
-            # 通常の質問生成と進捗管理の処理
-            elements = interview_agents.extract_elements(
-                message, messages, elements
-            )  # インタビュー状況を把握
-            # print(elements)
-            # print(messages)
-            # インタビューを終了すべきかチェック
+            judge_end = interview_agents.judge_end(messages, message)
+            print(judge_end)
+            interview_guide = interview_agents.manage_interview_guide(
+                messages,
+                message,
+                interview_purpose,
+                question_items,
+                interview_guide=None,
+            )
+            print(interview_guide)
+            question = interview_agents.gpt_generate_question(
+                messages, message, interview_guide, judge_end
+            )
+            checked_response = interview_agents.check_question(
+                question=question, message=message, messages=messages, attempts=0
+            )
+            assistant_response = checked_response
             progress = 0
-            for key in elements.keys():
-                progress += min(len(elements[key]), 2)
-
-            if interview_agents.check_if_interview_should_end(messages, elements):
-                assistant_response = "お時間をいただきありがとうございました。インタビューを終了します"
-
-                progress = self.progress_max  # インタビュー終了時の進捗
-            else:
-                improved_question = interview_agents.generate_question(
-                    message=message,
-                    messages=messages,
-                    elements=elements,
-
-                )  # 質問を生成
-                # improved_question = interview_agents.improve_question(
-                #     question
-                # )  # 質問を改善
-                checked_question = interview_agents.check_question(
-                    improved_question, message, messages, elements, attempts=0
-                )  # 質問が適切かどうかをチェック. attemptsの初期値は0
-                assistant_response = checked_question
-                # progress = 5  # インタビュー進捗
-
         return assistant_response, progress
+
+    # def _generate_question(self, session_id, message, messages, elements):
+    #     # TODO ここに，チャピの回答を取得する処理を書く
+    #     interview_agents = InterviewAgents(self.args)
+
+    #     if len(messages) <= 0:
+    #         assistant_response = self.initial_question
+    #         progress = 0
+
+    #     else:
+    #         # 通常の質問生成と進捗管理の処理
+    #         elements = interview_agents.extract_elements(
+    #             message, messages, elements
+    #         )  # インタビュー状況を把握
+    #         # print(elements)
+    #         # print(messages)
+    #         # インタビューを終了すべきかチェック
+    #         progress = 0
+    #         for key in elements.keys():
+    #             progress += min(len(elements[key]), 2)
+
+    #         if interview_agents.check_if_interview_should_end(messages, elements):
+    #             assistant_response = "お時間をいただきありがとうございました。インタビューを終了します"
+
+    #             progress = self.progress_max  # インタビュー終了時の進捗
+    #         else:
+    #             improved_question = interview_agents.generate_question(
+    #                 message=message,
+    #                 messages=messages,
+    #                 elements=elements,
+
+    #             )  # 質問を生成
+    #             # improved_question = interview_agents.improve_question(
+    #             #     question
+    #             # )  # 質問を改善
+    #             checked_question = interview_agents.check_question(
+    #                 improved_question, message, messages, elements, attempts=0
+    #             )  # 質問が適切かどうかをチェック. attemptsの初期値は0
+    #             assistant_response = checked_question
+    #             # progress = 5  # インタビュー進捗
+
+    #     return assistant_response, progress
 
     def __generate_question(self, session_id, message, messages):
         # TODO ここに，チャピの回答を取得する処理を書く

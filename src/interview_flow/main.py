@@ -1,37 +1,48 @@
 def generate_question(session_id, message, messages):
+    if len(messages) <= 0:
+        assistant_response = "本日はよろしくお願いします！"
+        # progress = 0
+    else:
+        judge_end = interview_agents.judge_end(messages, message)
+        interview_guide = interview_agents.manage_interview_guide(messages, message, interview_purpose, question_items, interview_guide=None)
+        question = interview_agents.gpt_generate_question(messages, message, interview_guide, judge_end)
+        improved_question= interview_agents.check_question(question, message, messages, attempts=0)
+        assistant_response = improved_question
+    return assistant_response, progress
+    
     # TODO ここに，チャピの回答を取得する処理を書く
 
-    if len(messages) <= 0:
-        assistant_response = "現在、どんな作業をしていますか？"  # TODO ちゃぴに作らせる
-        progress = 0
+    # if len(messages) <= 0:
+    #     assistant_response = "現在、どんな作業をしていますか？"  # TODO ちゃぴに作らせる
+    #     progress = 0
 
-    else:
-        # 通常の質問生成と進捗管理の処理
-        elements = interview_agents.extract_elements(
-            message, messages
-        )  # インタビュー状況を把握
-        # print(elements)
-        # print(messages)
-        # インタビューを終了すべきかチェック
-        if interview_agents.check_if_interview_should_end(messages, elements):
-            assistant_response = (
-                "本日はインタビューのお時間をいただきありがとうございました"
-            )
-            progress = 5  # インタビュー終了時の進捗
-        else:
-            question = interview_agents.generate_question(
-                message, elements, messages
-            )  # 質問を生成
-            improved_question = interview_agents.improve_question(
-                question
-            )  # 質問を改善
-            checked_question = interview_agents.check_question(
-                improved_question, message, messages, elements, attempts=0
-            )  # 質問が適切かどうかをチェック. attemptsの初期値は0
-            assistant_response = checked_question
-            progress = 5  # インタビュー進捗
+    # else:
+    #     # 通常の質問生成と進捗管理の処理
+    #     elements = interview_agents.extract_elements(
+    #         message, messages
+    #     )  # インタビュー状況を把握
+    #     # print(elements)
+    #     # print(messages)
+    #     # インタビューを終了すべきかチェック
+    #     if interview_agents.check_if_interview_should_end(messages, elements):
+    #         assistant_response = (
+    #             "本日はインタビューのお時間をいただきありがとうございました"
+    #         )
+    #         progress = 5  # インタビュー終了時の進捗
+    #     else:
+    #         question = interview_agents.generate_question(
+    #             message, elements, messages
+    #         )  # 質問を生成
+    #         improved_question = interview_agents.improve_question(
+    #             question
+    #         )  # 質問を改善
+    #         checked_question = interview_agents.check_question(
+    #             improved_question, message, messages, elements, attempts=0
+    #         )  # 質問が適切かどうかをチェック. attemptsの初期値は0
+    #         assistant_response = checked_question
+    #         progress = 5  # インタビュー進捗
 
-    return assistant_response, progress
+    # return assistant_response, progress
 
 
 """ここより下は一切変更不要。LINE botと同じような入出力にするためのコード"""

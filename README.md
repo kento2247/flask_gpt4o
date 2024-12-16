@@ -13,6 +13,9 @@
 
 2. install dependencies
    ```sh
+   pyenv install 3.10.0
+   pyenv virtualenv 3.10.0 flask_gpt4o
+   pyenv local flask_gpt4o
    pip install -r requirements.txt
    ```
 3. add .env file

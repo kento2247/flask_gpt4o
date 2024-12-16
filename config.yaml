@@ -3,15 +3,24 @@ openai:
   max_tokens: 100
   temperature: 0.5
   early_stopping: True
+
+interview_purpose: "従業員のタスクに対する認知プロセスとその背景にある信念を理解すること"
+question_items:
+  - "タスク内容"
+  - "認知プロセス"
+  - "活用している情報"
 mongodb:
-  database_name: gpt4otest
-  collection_name: messages
+  database_name: interview_data
+  collection_name: v1
+mongodb:
+  database_name: interview_data
+  collection_name: v2
 server:
   port: 3011
 flow:
   progress_max: 8
   follow_message: 最近あなたが責任感を持って行なったタスクについて具体的に教えてもらえますか？
-  initial_question: 今、何の作業をしていますか？
+  initial_question: 本日はよろしくお願いします
 line:
   template_path:
     gpt_response: templates/gpt_response.json
