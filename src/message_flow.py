@@ -195,7 +195,6 @@ class message_flow:
         interview_agents = InterviewAgents(self.args)
         interview_purpose = self.config["interview_purpose"]
         question_items = self.config["question_items"]
-        
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
@@ -210,14 +209,16 @@ class message_flow:
                 question_items,
                 interview_guide=None,
             )
+
             print(interview_guide)
+
+            advice = interview_agents.evaluate_interview_direction(
+                messages, message, interview_purpose, question_items
+            )
             question = interview_agents.gpt_generate_question(
-                messages, message, interview_guide, judge_end
+                messages, message, interview_guide, judge_end, advice
             )
-            checked_response = interview_agents.check_question(
-                question=question, message=message, messages=messages, attempts=0
-            )
-            assistant_response = checked_response
+            assistant_response = question
             progress = 0
         return assistant_response, progress
 

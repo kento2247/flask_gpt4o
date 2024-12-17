@@ -267,31 +267,36 @@ class InterviewAgents:
 
         return interview_guide
 
-    def gpt_generate_question(self, messages, message, interview_guide, judge_end):
+    def gpt_generate_question(self, messages, message, interview_guide, judge_end, advice):
         system_message = """
-        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めて短い質問を生成してください。\n
+        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めて半構造化インタビューの会話を行ってください。\n
         目的：インタビューガイドに従い、対話履歴と直前の回答を参照しながら、半構造化インタビューを行ってください。インタビューは短くて構いませんが、深堀して思いの真相を聞き出すことを意識してください。インタビューガイドは上から優先度が高い順に質問項目が並んでいます。\n
         内容説明：
         半構造化インタビューは、あらかじめ用意されたインタビューガイドに基づいて進行しますが、回答者の発言に応じて質問を追加したり、変更したりすることが可能なインタビュー手法です。半構造化インタビューでは、対象者が自由に意見を述べられるようにしつつ、研究のテーマや目標に焦点を当てる必要があります。
-        インタビューガイドは、調査の目標に基づいて設計され、インタビューの方向性を明確にするもので、インタビューの目的と大まかな質問項目が示されています。\n
+        インタビューガイドは、調査の目標に基づいて設計され、インタビューの方向性を明確にするもので、インタビューの目的と大まかな質問項目が示されています。インタビューガイドの項目の情報が増えてきたらインタビューは終了です。\n
         インタビューの流れ：
         1.初めに緊張を和らげるための序盤の質問をする
         2.インタビューの趣旨を簡単に説明し、そのあと、本題のインタビューに入る
         3.インタビューに参加してくれたことに対する感謝を示して終了する
-        制約：質問については、以下のことを意識してください。\n
+        質問については、以下のことを守ってください。\n
         1.具体的かつ簡潔で明確な質問
         2.誘導的でない質問
         3.オープンエンドな質問
         4. 本音や、背景にある意味や動機を引き出すために、仮説の提示,具体物を提示,主観的意見の提示,共感,後押しの技法を使う\n
-        また、インタビューガイドについての項目を一通り質問し終えたときか、感情予測に基づく終了判定がyesの時は、質問内容を変えるか、インタビューを終了してください。
+        5. 相槌と質問は一つのみで,短いフレーズで構成する。例えば、内容と手順と頻度を一度に聞くのではなく、それぞれに分けて質問する\n
+        また、以下の制約を守って下ください。\n
+        1. 感情予測に基づく終了判定がyesの時は、質問内容を変えるか、インタビューを終了する
+        2. インタビューの進行の評価とアドバイスを参考にして、インタビューを行う
         """
         prompt = f"""
         インタビューガイド: {interview_guide}
+        インタビュー進行の評価とアドバイス: {advice}
         メッセージ履歴: {messages}
         直前の回答: {message}
         感情に基づく終了判定: {judge_end}
-        半構造化インタビューのプロとして、簡潔かつ端的な質問を生成してください。
+        半構造化インタビューのプロとして、簡潔な一つの質問を生成し必ずインタビューガイドとアドバイスに沿いながら、フォローアップ質問をしつつインタビューしてください。何個も同時に聞かれると、相手は嫌に感じます。
         感情に基づく終了判定がyesの場合、インタビューを終了してください。
+        インタビューは短くて構いません。
         """
         question = self._get_gpt_response(system_message, prompt)
         return question
@@ -311,7 +316,7 @@ class InterviewAgents:
         インタビュー履歴:
         {messages}
 
-        この質問は適切ですか？過去に類似した質問がなく、適切であれば、{question}の質問を出力し、インタビュー履歴{messages}または、直前の回答{message}に類似した内容が既に存在する場合は「不適切」とだけ出力してください。
+        この質問は適切ですか？過去に類似した質問がなく適切であれば、{question}をそのまま出力し、インタビュー履歴{messages}または、直前の回答{message}に類似した内容が既に存在する場合は「不適切」とだけ出力してください。
         """
 
         # checked_response = self._get_gpt_response(system_message, prompt)
@@ -340,15 +345,31 @@ class InterviewAgents:
                 return question
 
             # 新しい質問を生成
-            
+
             new_question = self.gpt_generate_question(messages, message, interview_guide, judge_end)
 
             # 再度、生成した質問の適切性を確認
-            return self.check_question(
-                new_question, message, messages, attempts
-            )
+            return self.check_question(new_question, message, messages, attempts, interview_guide, judge_end)
 
-        return question
+        return checked_response
+
+    def evaluate_interview_direction(self, messages, message, interview_purpose, question_items):
+        system_message = """
+        あなたはインタビューの方向性を評価する専門家です。
+        インタビューガイドから大きくそれていないか、フォローアップ質問が続きすぎて本題とずれていないかを評価し、その思考過程をアドバイスとして出力してください。
+        """
+
+        prompt = f"""
+        インタビュー履歴: {messages}
+        直前の回答: {message}
+        インタビューガイド: {interview_purpose}, {question_items}
+
+        この質問がインタビューガイドに沿っているか、またフォローアップ質問が続きすぎて本題とずれていないかを評価し、アドバイスを出力してください。
+        問題がある場合は、どのように修正すべきかのアドバイスも含めてください。
+        """
+
+        advice = self._get_gpt_response(system_message, prompt)
+        return advice
 
     def judge_end(self,messages,message):
         system_message = """
@@ -445,7 +466,6 @@ class InterviewAgents:
 
     #     return improved_question
 
-    
     # def generate_summary(self, messages):
     #     system_message = """
     #     あなたはインタビューの専門家です。これまでのメッセージ履歴をもとに、インタビューの総括を行ってください。
