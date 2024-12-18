@@ -195,9 +195,6 @@ class message_flow:
         interview_agents = InterviewAgents(self.args)
         interview_purpose = self.config["interview_purpose"]
         question_items = self.config["question_items"]
-        print(interview_purpose)
-        print(question_items)
-        input()
 
         if len(messages) <= 0:
             assistant_response = self.initial_question
