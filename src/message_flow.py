@@ -160,8 +160,8 @@ class message_flow:
         messages_dict = self.mongo_db_client.get_one_messages_session_id(session_id)
         messages = messages_dict["data"]
         elements = messages_dict.get("elements", {})
-        # interview_purpose = self.config["interview_purpose"]
-        # question_items = self.config["question_items"]
+        interview_purpose = self.config["interview_purpose"]
+        question_items = self.config["question_items"]
         message = self.processing_dict[line_id]["message"]
         reply_token = self.processing_dict[line_id]["reply_token"]
 
@@ -209,14 +209,16 @@ class message_flow:
                 question_items,
                 interview_guide=None,
             )
+
             print(interview_guide)
+
+            advice = interview_agents.evaluate_interview_direction(
+                messages, message, interview_purpose, question_items
+            )
             question = interview_agents.gpt_generate_question(
-                messages, message, interview_guide, judge_end
+                messages, message, interview_guide, judge_end, advice
             )
-            checked_response = interview_agents.check_question(
-                question=question, message=message, messages=messages, attempts=0
-            )
-            assistant_response = checked_response
+            assistant_response = question
             progress = 0
         return assistant_response, progress
 

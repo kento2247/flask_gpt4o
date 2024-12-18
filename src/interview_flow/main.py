@@ -1,4 +1,6 @@
-def generate_question(session_id, message, messages):
+def generate_question(self, session_id, message, messages):
+    interview_purpose = self.config["interview_purpose"]
+    question_items = self.config["question_items"]
     if len(messages) <= 0:
         assistant_response = "本日はよろしくお願いします！"
         # progress = 0
