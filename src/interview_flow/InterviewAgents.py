@@ -1,4 +1,5 @@
 import openai
+import json
 
 
 class InterviewAgents:
@@ -19,10 +20,13 @@ class InterviewAgents:
         self.question_items = args.config["question_items"]
 
     def _get_gpt_response(self, sys_message: str, usr_message: str) -> str:
-        req_messages = [
-            {"role": "system", "content": sys_message},
-            {"role": "user", "content": usr_message},
-        ]
+        if sys_message == "" or sys_message is None:
+            req_messages = [{"role": "user", "content": usr_message}]
+        else:
+            req_messages = [
+                {"role": "system", "content": sys_message},
+                {"role": "user", "content": usr_message},
+            ]
         response = openai.chat.completions.create(
             model=self.model,
             messages=req_messages,
@@ -121,6 +125,7 @@ class InterviewAgents:
         # """
 
         # return self._get_gpt_response(system_message, prompt)
+
     def interview_question(self, messages, message):
         system_message = f"""
         あなたはプラントの現場を取材するプロの半構造化インタビュアーです。以下の内容に基づいて、現場の従業員に対するインタビューを行ってください。\n
@@ -161,6 +166,7 @@ class InterviewAgents:
         現在の作業者のタスクについての認知プロセスと仕事に対する回答者の信念や本音という二つの要素を簡潔に聞き出す一つの質問を生成してください。
         """
         return self._get_gpt_response(system_message, prompt)
+
     def check_if_interview_should_end(self, messages, elements) -> bool:
         if not self.early_stopping:  # 早期終了が無効の場合は常にFalseを返す
             return False
@@ -225,51 +231,69 @@ class InterviewAgents:
         print("更新後のelements", elements)
         return elements
 
-    def manage_interview_guide(self, messages, message, interview_purpose, question_items,interview_guide=None):
+    def update_interview_guide(self, messages, message, interview_guide, try_tyme=3):
         """
         インタビューガイドを管理し、目的と質問項目に基づいて回答の要約を生成する。
 
         :param messages: インタビューのメッセージ履歴
         :param message: 最新のメッセージ
-        :param interview_purpose: インタビューの目的
-        :param question_items: 質問項目のリスト
+        :param interview_guide: インタビューガイド
+            interview_guide = {
+                "interview_purpose": "",
+                "guide": {
+                    question_item : [answer_summary1, answer_summary2, ...]
+                },
+            }
         :return: 更新されたインタビューガイド
         """
-        # インタビューガイドが提供されていない場合は初期化
-        # 初回のみinterview_guideを初期化
-        if interview_guide is None:
-            interview_guide = {
-                "interview_purpose": interview_purpose,
-                "interviewguide": {}
-            }
-
         # 各質問項目に対する回答の要約を生成
-        for question in question_items:
-            system_message = """
-            あなたはインタビューガイドを管理するエージェントです。
-            最新のメッセージの内容を簡潔に要約し、
-            インタビューガイドの該当項目を一か所のみ更新してください。
-            """
 
-            prompt = f"""
-            インタビューの目的: {interview_purpose}
-            質問: {question}
-            メッセージ履歴: {messages}
-            最新のメッセージ: {message}
+        system_message = ""
 
-            上記の情報をもとに、該当する一つ「{question}」に関する回答の要約のみを簡潔に出力してください。
-            """
+        prompt = f"""
+        あなたはインタビューガイドを管理するエージェントです。
+        最新のuserの回答に対応する質問項目を質問リストから選択し、その回答の要約を簡潔に出力してください。
+        インタビューの目的: {interview_guide["interview_purpose"]}
+        質問リスト: {interview_guide["guide"].keys()}
+        メッセージ履歴: {messages}
+        最新のuserの回答: {message}
 
-            # GPTを使用して要約を生成
-            summary = self._get_gpt_response(system_message, prompt)
-            if summary:
-                interview_guide["interviewguide"][question] = summary.strip()
+        出力はjson.loadsが可能なように、次の形式に従うこと。##{{"質問項目":"", "回答の要約":""}}##
+        """
 
+        for i in range(try_tyme):
+            result = self._get_gpt_response(system_message, prompt)
+            result = (
+                result.strip()
+                .replace("##", "")
+                .replace("{{", "{")
+                .replace("}}", "}")
+                .replace("```json", "")
+                .replace("```", "")
+            )
+            try:
+                result = json.loads(result)
+                question_item = result["質問項目"]
+                answer_summary = result["回答の要約"]
+                if question_item not in interview_guide["guide"]:
+                    print(
+                        "質問項目がインタビューガイドに存在しません。質問項目：",
+                        question_item,
+                    )
+                    continue
+                interview_guide["guide"][question_item].append(answer_summary)
+                return interview_guide
+            except json.JSONDecodeError:
+                print("JSONDecodeError. Try time: ", i, "result: ", result)
+
+        print("回答が正しくないため、インタビューガイドは更新されませんでした。")
         return interview_guide
 
-    def gpt_generate_question(self, messages, message, interview_guide, judge_end, advice):
+    def gpt_generate_question(
+        self, messages, message, interview_guide, judge_end, advice
+    ):
         system_message = """
-        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、相槌を含めて半構造化インタビューの会話を行ってください。\n
+        役割：あなたは、半構造化インタビューを行うインタビュアーです。インタビューの流れと制約に従い、文脈に沿った相槌や意見を含めて半構造化インタビューの会話を行ってください。\n
         目的：インタビューガイドに従い、対話履歴と直前の回答を参照しながら、半構造化インタビューを行ってください。インタビューは短くて構いませんが、深堀して思いの真相を聞き出すことを意識してください。インタビューガイドは上から優先度が高い順に質問項目が並んでいます。\n
         内容説明：
         半構造化インタビューは、あらかじめ用意されたインタビューガイドに基づいて進行しますが、回答者の発言に応じて質問を追加したり、変更したりすることが可能なインタビュー手法です。半構造化インタビューでは、対象者が自由に意見を述べられるようにしつつ、研究のテーマや目標に焦点を当てる必要があります。
@@ -284,25 +308,34 @@ class InterviewAgents:
         3.オープンエンドな質問
         4. 本音や、背景にある意味や動機を引き出すために、仮説の提示,具体物を提示,主観的意見の提示,共感,後押しの技法を使う\n
         5. 相槌と質問は一つのみで,短いフレーズで構成する。例えば、内容と手順と頻度を一度に聞くのではなく、それぞれに分けて質問する\n
+        6. あなたは、素人であるという心構えでインタビューをし、フォローアップ質問をたくさんする
         また、以下の制約を守って下ください。\n
         1. 感情予測に基づく終了判定がyesの時は、質問内容を変えるか、インタビューを終了する
         2. インタビューの進行の評価とアドバイスを参考にして、インタビューを行う
         """
         prompt = f"""
-        インタビューガイド: {interview_guide}
+        インタビューの目的: {interview_guide["interview_purpose"]}
+        質問リスト: {interview_guide["guide"].keys()}
+        インタビューガイドの進捗:{interview_guide}
         インタビュー進行の評価とアドバイス: {advice}
         メッセージ履歴: {messages}
         直前の回答: {message}
         感情に基づく終了判定: {judge_end}
         半構造化インタビューのプロとして、簡潔な一つの質問を生成し必ずインタビューガイドとアドバイスに沿いながら、フォローアップ質問をしつつインタビューしてください。何個も同時に聞かれると、相手は嫌に感じます。
-        感情に基づく終了判定がyesの場合、インタビューを終了してください。
-        インタビューは短くて構いません。
+        感情に基づく終了判定がyesの場合、進捗を見つつ、質問を変更するか、インタビューを終了してください。
+        インタビューは短くて構いません。インタビュアーであるあなたは素人であるという前提に立ち、直前の回答に対して深堀してください。相槌も文脈に合わせて適切に使ってください。
         """
         question = self._get_gpt_response(system_message, prompt)
         return question
 
     def check_question(
-        self, question, message, messages, attempts=0, interview_guide=None, judge_end=None
+        self,
+        question,
+        message,
+        messages,
+        attempts=0,
+        interview_guide=None,
+        judge_end=None,
     ):
         system_message = """
         あなたはインタビューの専門家で、改善された質問が適切かどうかを判断する役割を持っています。
@@ -346,14 +379,20 @@ class InterviewAgents:
 
             # 新しい質問を生成
 
-            new_question = self.gpt_generate_question(messages, message, interview_guide, judge_end)
+            new_question = self.gpt_generate_question(
+                messages, message, interview_guide, judge_end
+            )
 
             # 再度、生成した質問の適切性を確認
-            return self.check_question(new_question, message, messages, attempts, interview_guide, judge_end)
+            return self.check_question(
+                new_question, message, messages, attempts, interview_guide, judge_end
+            )
 
         return checked_response
 
-    def evaluate_interview_direction(self, messages, message, interview_purpose, question_items):
+    def evaluate_interview_direction(
+        self, messages, message, interview_guide
+    ):
         system_message = """
         あなたはインタビューの方向性を評価する専門家です。
         インタビューガイドから大きくそれていないか、フォローアップ質問が続きすぎて本題とずれていないかを評価し、その思考過程をアドバイスとして出力してください。
@@ -362,7 +401,7 @@ class InterviewAgents:
         prompt = f"""
         インタビュー履歴: {messages}
         直前の回答: {message}
-        インタビューガイド: {interview_purpose}, {question_items}
+        インタビューガイド: {interview_guide["interview_purpose"], interview_guide["guide"].keys()}
 
         この質問がインタビューガイドに沿っているか、またフォローアップ質問が続きすぎて本題とずれていないかを評価し、アドバイスを出力してください。
         問題がある場合は、どのように修正すべきかのアドバイスも含めてください。
@@ -371,7 +410,7 @@ class InterviewAgents:
         advice = self._get_gpt_response(system_message, prompt)
         return advice
 
-    def judge_end(self,messages,message):
+    def judge_end(self, messages, message):
         system_message = """
         あなたは、回答者がインタビュー中に不快や退屈を感じているかを判断するエージェントです。対話履歴{messages}と{message}を参照して、「つまらない」、「もういい」、「疲れた」などの表現や、「うん」「はい」などの単調な返答があるなどを手掛かりに、相手がインタビューに対して不快に感じているかを判断し、インタビューを終了した方がよいほど不快に感じていると判断した場合はyes、そうでない場合はnoを返してください。
         """
@@ -380,7 +419,7 @@ class InterviewAgents:
         最新の回答: {message}
         話題を変えたり、インタビューを終了するべきか、回答者の感情を予測しyesかnoで回答してください。
         """
-        judge_end=self._get_gpt_response(system_message, prompt)
+        judge_end = self._get_gpt_response(system_message, prompt)
         return judge_end
 
     # def _add_to_details(self, category, message, elements) -> dict:

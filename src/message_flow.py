@@ -39,8 +39,15 @@ class message_flow:
         # #     model=gpt_model, api_key=openai_api_key, sleep_api=args.sleep_api
         # # )
 
-        # 処理中のline_idの保持. {line_id: {reply_token: reply_token, message: message}}
+        # 処理中のline_idの保持. {line_id: {reply_token: reply_token, message: message, interview_guide: interview_guide}}
         self.processing_dict = {}
+
+        self.interview_guide_template = {
+            "interview_purpose": "",
+            "guide": {},
+        }
+        for item in self.config["question_items"]:
+            self.interview_guide_template["guide"][item] = []
 
     def message_parser(self, request_json):
         """
@@ -170,7 +177,7 @@ class message_flow:
             return True
 
         response_text, progress = self._generate_question(
-            session_id,
+            line_id,
             message,
             messages,
             # elements
@@ -191,7 +198,7 @@ class message_flow:
             self._update_history(line_id, message, response_text, elements)
             return True
 
-    def _generate_question(self, session_id, message, messages):
+    def _generate_question(self, line_id, message, messages):
         interview_agents = InterviewAgents(self.args)
         interview_purpose = self.config["interview_purpose"]
         question_items = self.config["question_items"]
@@ -201,19 +208,28 @@ class message_flow:
             progress = 0
         else:
             judge_end = interview_agents.judge_end(messages, message)
-            print(judge_end)
-            interview_guide = interview_agents.manage_interview_guide(
+            # print(judge_end)
+            # self.processing_dict[line_id]["interview_guide"]が存在すればそれを使う
+            interview_guide = self.processing_dict[line_id].get(
+                "interview_guide", self.interview_guide_template
+            )
+            # interview_guide = interview_agents.manage_interview_guide(
+            #     messages,
+            #     message,
+            #     interview_purpose,
+            #     question_items,
+            #     interview_guide,
+            # )
+            interview_guide = interview_agents.update_interview_guide(
                 messages,
                 message,
-                interview_purpose,
-                question_items,
-                interview_guide=None,
+                interview_guide,
             )
 
-            print(interview_guide)
+            # print(interview_guide)
 
             advice = interview_agents.evaluate_interview_direction(
-                messages, message, interview_purpose, question_items
+                messages, message, interview_guide
             )
             question = interview_agents.gpt_generate_question(
                 messages, message, interview_guide, judge_end, advice
